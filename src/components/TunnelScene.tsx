@@ -87,19 +87,19 @@ const MediaPanel = ({ data, index }: any) => {
 const CentralLogo = () => (
   <group position={[0, 0, -3]}>
     <Text
-      // THIS IS THE FIX. Loading the font directly from your public folder.
-      font="/montserrat-black.ttf"
+      // THE FONT URL IS GONE AGAIN. 
       fontSize={1.1} 
-      scale={[1.7, 1, 1]} // Stretching X to mimic the vector width
+      scale={[1.7, 1, 1]} 
       letterSpacing={-0.08}
       color="#ffffff"
+      strokeWidth={0.04} // Put the stroke back to fake the heavy font
+      strokeColor="#ffffff"
       anchorX="center"
       anchorY="middle"
     >
       PANORAMA
     </Text>
     <Text
-      font="/montserrat-black.ttf"
       fontSize={0.18}
       position={[0, -0.85, 0]}
       letterSpacing={2}
@@ -117,7 +117,6 @@ export default function TunnelScene() {
   return (
     <div style={{ width: "100vw", height: "100vh", background: "#000", position: "relative", overflow: "hidden" }}>
       
-      {/* BACKGROUND VIDEO */}
       <video
         autoPlay loop muted playsInline
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.25, zIndex: 0, pointerEvents: "none" }}
@@ -125,7 +124,6 @@ export default function TunnelScene() {
         <source src="https://framerusercontent.com/assets/b318xptt3gA2YnoeksZKkHw7hiG.mp4" type="video/mp4" />
       </video>
 
-      {/* CSS 2D GRID OVERLAY */}
       <div 
         style={{ 
           position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
@@ -134,7 +132,6 @@ export default function TunnelScene() {
         }} 
       />
 
-      {/* 3D TUNNEL CANVAS */}
       <Canvas camera={{ position: [0, 0, 4], fov: FOV }} gl={{ antialias: true, alpha: true }} style={{ position: "absolute", inset: 0, zIndex: 2 }}>
         <Suspense fallback={null}>
           <ScrollControls pages={3} damping={0.25}>
