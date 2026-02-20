@@ -1,6 +1,7 @@
 import React, { Suspense, useMemo } from "react";
-import { Canvas } from "@react-three/fiber";
-import { Text, Float, Image, useVideoTexture } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Text, Float, Image, useVideoTexture, ScrollControls, useScroll } from "@react-three/drei";
+import * as THREE from "three";
 
 /* ---------------- CAMERA ---------------- */
 const FOV = 65; 
@@ -41,6 +42,26 @@ const VIDEOS = [
 ];
 
 /* ---------------- COMPONENTS ---------------- */
+
+// THE NEW CAMERA CONTROLLER
+// This hijacks the scroll wheel and maps it to the camera's Z depth
+const CameraController = () => {
+  const scroll = useScroll();
+
+  useFrame((state) => {
+    // scroll.offset goes from 0 (top of page) to 1 (bottom of page)
+    // We start at Z=4. At the bottom of the scroll, we end at Z=-15.
+    // We don't go past -15 so we don't clip through the deep background images.
+    const targetZ = 4 - scroll.offset * 19; 
+    
+    // Lerp (Linear Interpolation) makes the camera movement buttery smooth 
+    // instead of instantly snapping to the scroll wheel's exact tick.
+    state.camera.position.lerp(new THREE.Vector3(0, 0, targetZ), 0.08);
+  });
+
+  return null;
+};
+
 const VideoPlane = ({ data, url }: any) => {
   const texture = useVideoTexture(url, { crossOrigin: "Anonymous" });
   return (
@@ -82,12 +103,11 @@ const CentralLogo = () => (
   // Fixed at Z=-3
   <group position={[0, 0, -3]}>
     <Text
-      // THE FONT URL IS GONE. We are relying on the stroke trick again so it doesn't crash.
       fontSize={1.1} 
       scale={[1.7, 1, 1]} 
       letterSpacing={-0.08}
       color="#ffffff"
-      strokeWidth={0.04} // Cranked the stroke back up to fake the thickness
+      strokeWidth={0.04} 
       strokeColor="#ffffff"
       anchorX="center"
       anchorY="middle"
@@ -146,14 +166,20 @@ export default function TunnelScene() {
         style={{ position: "absolute", inset: 0, zIndex: 2 }}
       >
         <Suspense fallback={null}>
-          <fog attach="fog" args={["#000000", 2, 22]} />
-          <ambientLight intensity={1} />
+          {/* SCROLL CONTROLS WRAPPER: pages=3 makes the scroll area 3 times the height of the viewport */}
+          <ScrollControls pages={3} damping={0.25}>
+            <CameraController />
+            
+            {/* The fog moves with the camera, so we need to push it slightly further out */}
+            <fog attach="fog" args={["#000000", 2, 28]} />
+            <ambientLight intensity={1} />
 
-          <CentralLogo />
+            <CentralLogo />
 
-          {PANELS.map((panel, i) => (
-            <MediaPanel key={i} data={panel} index={i} />
-          ))}
+            {PANELS.map((panel, i) => (
+              <MediaPanel key={i} data={panel} index={i} />
+            ))}
+          </ScrollControls>
         </Suspense>
       </Canvas>
     </div>
