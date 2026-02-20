@@ -49,10 +49,9 @@ const StaticFixedImage = ({ data, index }: StaticFixedImageProps) => {
           color="#999999" // Tinting images darker ensures the central white text "pops"
           toneMapped={false}
         />
-        {/* Subtle border to define the image edges against the black void */}
         <lineSegments>
            <edgesGeometry args={[new THREE.PlaneGeometry(data.scale[0], data.scale[1])]} />
-          <lineBasicMaterial color="#333" transparent opacity={0.3} />
+           <lineBasicMaterial color="#333" transparent opacity={0.3} />
         </lineSegments>
       </group>
     </Float>
@@ -63,7 +62,7 @@ const WireframeTube = () => {
   const size = 150;
   const divisions = 60;
   // Offsets are wider than the image positions to stop the grid from clipping through images
-  const wallOffset = 14.5;
+  const wallOffset = 14.5; 
   const floorOffset = 10.5;
 
   return (
@@ -117,7 +116,7 @@ export default function TunnelScene() {
         camera={{ position: [0, 0, 20], fov: FOV_WARP }} 
         gl={{ 
             antialias: true,
-          logarithmicDepthBuffer: true // Fixes flickering for overlapping 3D objects
+            logarithmicDepthBuffer: true // Fixes flickering for overlapping 3D objects
         }}
       >
         <color attach="background" args={['#000000']} />
