@@ -1,25 +1,26 @@
 import React, { Suspense, useEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Text, Float, Image, useVideoTexture } from "@react-three/drei";
+import { Text, Float, useVideoTexture } from "@react-three/drei";
 import * as THREE from "three";
 
 const FOV = 65; 
 
 /* ---------------- THE CONTROLLED CHAOS LAYOUT ---------------- */
-// ALL references to vid2.mp4 have been removed to stop the 404 crash.
+// Every single panel is now a video using vid1.mp4.
+// No images = No 404 errors for missing JPEGs.
 const PANELS = [
-  { pos: [-4.5, 1.2, -1], rot: [0.1, Math.PI / 5, 0.05], scale: [2.5, 1.5], type: 'video', src: '/vid1.mp4' },
-  { pos: [5.2, -1.5, -1.5], rot: [-0.1, -Math.PI / 6, 0], scale: [2.8, 1.7], type: 'video', src: '/vid1.mp4' },
-  { pos: [-7.5, -2, -5], rot: [0, Math.PI / 4, 0.1], scale: [3.2, 1.9], type: 'image', src: '/img1.jpg' },
-  { pos: [6.5, 2.8, -4.5], rot: [0, -Math.PI / 5, -0.1], scale: [3, 1.8], type: 'image', src: '/img1.jpg' },
-  { pos: [-8, 3.5, -10], rot: [0.2, Math.PI / 5, 0], scale: [3.8, 2.2], type: 'video', src: '/vid1.mp4' },
-  { pos: [8.5, -2.5, -9], rot: [-0.1, -Math.PI / 4, 0], scale: [3.5, 2], type: 'video', src: '/vid1.mp4' },
-  { pos: [-1.5, 5, -3.5], rot: [Math.PI / 4, 0.1, 0.05], scale: [2.8, 1.6], type: 'image', src: '/img1.jpg' },
-  { pos: [2.5, 6.5, -8], rot: [Math.PI / 5, -0.1, 0], scale: [3.5, 2], type: 'video', src: '/vid1.mp4' },
-  { pos: [2, -5.5, -4], rot: [-Math.PI / 4, -0.1, 0], scale: [3, 1.8], type: 'image', src: '/img1.jpg' },
-  { pos: [-3.5, -6, -9], rot: [-Math.PI / 5, 0.2, 0.05], scale: [3.8, 2.2], type: 'video', src: '/vid1.mp4' },
-  { pos: [-3, -1.5, -18], rot: [0.05, 0.2, 0], scale: [5, 3], type: 'image', src: '/img1.jpg' },
-  { pos: [4, 2, -20], rot: [-0.05, -0.15, 0], scale: [6, 3.5], type: 'video', src: '/vid1.mp4' }
+  { pos: [-4.5, 1.2, -1], rot: [0.1, Math.PI / 5, 0.05], scale: [2.5, 1.5] },
+  { pos: [5.2, -1.5, -1.5], rot: [-0.1, -Math.PI / 6, 0], scale: [2.8, 1.7] },
+  { pos: [-7.5, -2, -5], rot: [0, Math.PI / 4, 0.1], scale: [3.2, 1.9] },
+  { pos: [6.5, 2.8, -4.5], rot: [0, -Math.PI / 5, -0.1], scale: [3, 1.8] },
+  { pos: [-8, 3.5, -10], rot: [0.2, Math.PI / 5, 0], scale: [3.8, 2.2] },
+  { pos: [8.5, -2.5, -9], rot: [-0.1, -Math.PI / 4, 0], scale: [3.5, 2] },
+  { pos: [-1.5, 5, -3.5], rot: [Math.PI / 4, 0.1, 0.05], scale: [2.8, 1.6] },
+  { pos: [2.5, 6.5, -8], rot: [Math.PI / 5, -0.1, 0], scale: [3.5, 2] },
+  { pos: [2, -5.5, -4], rot: [-Math.PI / 4, -0.1, 0], scale: [3, 1.8] },
+  { pos: [-3.5, -6, -9], rot: [-Math.PI / 5, 0.2, 0.05], scale: [3.8, 2.2] },
+  { pos: [-3, -1.5, -18], rot: [0.05, 0.2, 0], scale: [5, 3] },
+  { pos: [4, 2, -20], rot: [-0.05, -0.15, 0], scale: [6, 3.5] }
 ];
 
 /* ---------------- CAMERA CONTROLLER ---------------- */
@@ -28,7 +29,6 @@ const CameraController = () => {
   const { camera } = useThree();
 
   useEffect(() => {
-    // Cinematic snap-back start position
     camera.position.set(0, 0, -10);
 
     const handleWheel = (e: WheelEvent) => {
@@ -49,7 +49,8 @@ const CameraController = () => {
 
 /* ---------------- COMPONENTS ---------------- */
 const VideoPlane = ({ data }: any) => {
-  const texture = useVideoTexture(data.src, { crossOrigin: "Anonymous" });
+  // Pulls vid1.mp4 for every single panel
+  const texture = useVideoTexture("/vid1.mp4", { crossOrigin: "Anonymous" });
   return (
     <mesh position={data.pos} rotation={data.rot}>
       <planeGeometry args={data.scale} />
@@ -58,20 +59,10 @@ const VideoPlane = ({ data }: any) => {
   );
 };
 
-const ImagePlane = ({ data }: any) => {
-  return (
-    <Image
-      position={data.pos} rotation={data.rot} url={data.src}
-      scale={data.scale} transparent opacity={0.9}
-      color="#cccccc" toneMapped={false} 
-    />
-  );
-};
-
 const MediaPanel = ({ data }: any) => {
   return (
     <Float speed={2} rotationIntensity={0.05} floatIntensity={0.1}>
-      {data.type === 'video' ? <VideoPlane data={data} /> : <ImagePlane data={data} />}
+      <VideoPlane data={data} />
     </Float>
   );
 };
@@ -129,9 +120,7 @@ export default function TunnelScene() {
           <CameraController />
           <fog attach="fog" args={["#000000", 2, 22]} />
           <ambientLight intensity={1} />
-
           <CentralLogo />
-
           {PANELS.map((panel, i) => (
             <MediaPanel key={i} data={panel} />
           ))}
