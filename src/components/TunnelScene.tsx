@@ -48,7 +48,6 @@ const VideoPlane = ({ data, url }: any) => {
       rotation={data.rot}
     >
       <planeGeometry args={data.scale} />
-      {/* Keeping color dim so the text pops */}
       <meshBasicMaterial map={texture} toneMapped={false} color="#999" />
     </mesh>
   );
@@ -75,12 +74,11 @@ const TunnelVideo = ({ data, index }: any) => {
 const CentralLogo = () => (
   <group position={[0, 0, -6]}>
     <Text
-      // REMOVED THE BROKEN FONT URL. Using the default font prevents the crash.
-      fontSize={2.4}
-      scale={[2.2, 1, 1]}
-      letterSpacing={-0.08}
+      fontSize={0.8} // DRASTICALLY REDUCED: Was 2.4, now mathematically sized to fit
+      scale={[1.5, 1, 1]} // Reduced the X-axis stretch so it doesn't bleed off screen
+      letterSpacing={-0.05}
       color="#ffffff"
-      strokeWidth={0.05} // Added stroke to fake the heavy thickness
+      strokeWidth={0.015} // Thinned out the stroke to match the smaller text size
       strokeColor="#ffffff"
       anchorX="center"
       anchorY="middle"
@@ -89,8 +87,8 @@ const CentralLogo = () => (
     </Text>
 
     <Text
-      fontSize={0.35}
-      position={[0, -1.5, 0]}
+      fontSize={0.15}
+      position={[0, -0.6, 0]} // Pulled up to sit tightly under the main text
       letterSpacing={1.6}
       color="#ffffff"
       anchorX="center"
@@ -135,13 +133,15 @@ export default function TunnelScene() {
         />
       </video>
 
+      {/* Grid Overlay */}
+      <div className="framer-grid" style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }} />
+
       {/* Canvas */}
       <Canvas
         camera={{ position: [0, 0, 8], fov: FOV }}
         gl={{ antialias: true, alpha: true }}
-        style={{ position: "absolute", inset: 0, zIndex: 1 }}
+        style={{ position: "absolute", inset: 0, zIndex: 2 }}
       >
-        {/* GLOBAL SUSPENSE: If any texture or text fails to load, this stops the whole screen from going black */}
         <Suspense fallback={null}>
           <fog attach="fog" args={["#000000", 8, 35]} />
           <ambientLight intensity={1} />
