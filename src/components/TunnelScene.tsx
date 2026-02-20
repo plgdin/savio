@@ -5,31 +5,30 @@ import * as THREE from "three";
 
 const FOV = 65; 
 
-/* ---------------- THE BREATHING COLLAGE LAYOUT ---------------- */
+/* ---------------- CONTROLLED CHAOS LAYOUT ---------------- */
+// Symmetrical base structure, but with asymmetrical offsets in rotation, size, and depth.
 const PANELS = [
-  // CLOSE RING
-  { pos: [-5, 1.5, -1],   rot: [0, Math.PI / 5, 0],  scale: [2.5, 1.5], type: 'video' },
-  { pos: [5, -1.5, -1],   rot: [0, -Math.PI / 5, 0], scale: [2.5, 1.5], type: 'video' },
+  // CLOSE RING (Framing the entrance)
+  { pos: [-4.5, 1.2, -1],    rot: [0.1, Math.PI / 5, 0.05],   scale: [2.5, 1.5], type: 'video' }, // Slightly tilted up
+  { pos: [5.2, -1.5, -1.5],  rot: [-0.1, -Math.PI / 6, 0],    scale: [2.8, 1.7], type: 'video' }, // Slightly larger, pushed back
+
+  // MID RING (The core walls)
+  { pos: [-7.5, -2, -5],     rot: [0, Math.PI / 4, 0.1],      scale: [3.2, 1.9], type: 'image' },
+  { pos: [6.5, 2.8, -4.5],   rot: [0, -Math.PI / 5, -0.1],    scale: [3, 1.8],   type: 'image' },
   
-  // MID RING
-  { pos: [-7, -2.5, -5],  rot: [0, Math.PI / 5, 0],  scale: [3, 1.8],   type: 'image' },
-  { pos: [-8, 3, -9],     rot: [0, Math.PI / 5, 0],  scale: [3.5, 2],   type: 'image' },
-  { pos: [-9, -1, -14],   rot: [0, Math.PI / 6, 0],  scale: [4, 2.5],   type: 'video' },
+  { pos: [-8, 3.5, -10],     rot: [0.2, Math.PI / 5, 0],      scale: [3.8, 2.2], type: 'video' },
+  { pos: [8.5, -2.5, -9],    rot: [-0.1, -Math.PI / 4, 0],    scale: [3.5, 2],   type: 'video' },
 
-  { pos: [7, 2.5, -5],    rot: [0, -Math.PI / 5, 0], scale: [3, 1.8],   type: 'image' },
-  { pos: [8, -3, -9],     rot: [0, -Math.PI / 5, 0], scale: [3.5, 2],   type: 'video' },
-  { pos: [9, 1, -14],     rot: [0, -Math.PI / 6, 0], scale: [4, 2.5],   type: 'image' },
+  // CEILING & FLOOR (Organic angles)
+  { pos: [-1.5, 5, -3.5],    rot: [Math.PI / 4, 0.1, 0.05],   scale: [2.8, 1.6], type: 'image' },
+  { pos: [2.5, 6.5, -8],     rot: [Math.PI / 5, -0.1, 0],     scale: [3.5, 2],   type: 'video' },
 
-  // TOP & BOTTOM WALLS
-  { pos: [-2.5, 4.5, -3], rot: [Math.PI / 5, 0, 0],  scale: [2.8, 1.6], type: 'image' },
-  { pos: [3, 6, -8],      rot: [Math.PI / 5, 0, 0],  scale: [3.5, 2],   type: 'video' },
+  { pos: [2, -5.5, -4],      rot: [-Math.PI / 4, -0.1, 0],    scale: [3, 1.8],   type: 'image' },
+  { pos: [-3.5, -6, -9],     rot: [-Math.PI / 5, 0.2, 0.05],  scale: [3.8, 2.2], type: 'video' },
 
-  { pos: [2.5, -4.5, -3], rot: [-Math.PI / 5, 0, 0], scale: [2.8, 1.6], type: 'image' },
-  { pos: [-3, -6, -8],    rot: [-Math.PI / 5, 0, 0], scale: [3.5, 2],   type: 'video' },
-
-  // DEEP BACKGROUND
-  { pos: [-2, -1, -20],   rot: [0, 0.1, 0],          scale: [5, 3],     type: 'image' },
-  { pos: [3, 2, -22],     rot: [0, -0.1, 0],         scale: [5.5, 3.2], type: 'video' }
+  // DEEP BACKGROUND (The vanishing point)
+  { pos: [-3, -1.5, -18],    rot: [0.05, 0.2, 0],             scale: [5, 3],     type: 'image' },
+  { pos: [4, 2, -20],        rot: [-0.05, -0.15, 0],          scale: [6, 3.5],   type: 'video' }
 ];
 
 const VIDEOS = [
@@ -37,14 +36,19 @@ const VIDEOS = [
   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
 ];
 
-/* ---------------- CAMERA CONTROLLER ---------------- */
+/* ---------------- CINEMATIC CAMERA CONTROLLER ---------------- */
 const CameraController = () => {
   const scroll = useScroll();
 
   useFrame((state) => {
-    // Flies the camera from Z=4 down into the tunnel to Z=-15 based on scroll
-    const targetZ = 4 - scroll.offset * 19; 
-    state.camera.position.lerp(new THREE.Vector3(0, 0, targetZ), 0.08);
+    // 1. The page loads. The Canvas spawned the camera at Z = -1 (super close to the text).
+    // 2. scroll.offset is 0. So targetZ is 5.
+    // 3. The lerp violently but smoothly pulls the camera backwards from -1 to 5. 
+    //    ^^^ THIS IS YOUR FRAMER INTRO REVEAL ANIMATION. ^^^
+    // 4. Once it settles at 5, scrolling pushes it deep into the tunnel to Z = -15.
+    
+    const targetZ = 5 - scroll.offset * 20; 
+    state.camera.position.lerp(new THREE.Vector3(0, 0, targetZ), 0.06); // 0.06 dictates the speed of the zoom-out and scroll easing
   });
 
   return null;
@@ -62,7 +66,7 @@ const VideoPlane = ({ data, url }: any) => {
 };
 
 const ImagePlane = ({ data, index }: any) => {
-  const url = useMemo(() => `https://picsum.photos/800/500?random=${index + 200}`, [index]);
+  const url = useMemo(() => `https://picsum.photos/800/500?random=${index + 300}`, [index]);
   return (
     <Image 
       position={data.pos} rotation={data.rot} url={url} 
@@ -74,7 +78,7 @@ const ImagePlane = ({ data, index }: any) => {
 
 const MediaPanel = ({ data, index }: any) => {
   return (
-    <Float speed={2} rotationIntensity={0.05} floatIntensity={0.1}>
+    <Float speed={2} rotationIntensity={0.08} floatIntensity={0.15}>
       {data.type === 'video' 
         ? <VideoPlane data={data} url={VIDEOS[index % VIDEOS.length]} />
         : <ImagePlane data={data} index={index} />
@@ -87,12 +91,11 @@ const MediaPanel = ({ data, index }: any) => {
 const CentralLogo = () => (
   <group position={[0, 0, -3]}>
     <Text
-      // THE FONT URL IS GONE AGAIN. 
       fontSize={1.1} 
       scale={[1.7, 1, 1]} 
       letterSpacing={-0.08}
       color="#ffffff"
-      strokeWidth={0.04} // Put the stroke back to fake the heavy font
+      strokeWidth={0.04} 
       strokeColor="#ffffff"
       anchorX="center"
       anchorY="middle"
@@ -132,13 +135,16 @@ export default function TunnelScene() {
         }} 
       />
 
-      <Canvas camera={{ position: [0, 0, 4], fov: FOV }} gl={{ antialias: true, alpha: true }} style={{ position: "absolute", inset: 0, zIndex: 2 }}>
+      {/* WE SPAWN THE CAMERA AT Z = -1. This is the trick for the intro zoom reveal. */}
+      <Canvas camera={{ position: [0, 0, -1], fov: FOV }} gl={{ antialias: true, alpha: true }} style={{ position: "absolute", inset: 0, zIndex: 2 }}>
         <Suspense fallback={null}>
           <ScrollControls pages={3} damping={0.25}>
             <CameraController />
             <fog attach="fog" args={["#000000", 2, 28]} />
             <ambientLight intensity={1} />
+            
             <CentralLogo />
+            
             {PANELS.map((panel, i) => (
               <MediaPanel key={i} data={panel} index={i} />
             ))}
