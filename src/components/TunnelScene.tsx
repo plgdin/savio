@@ -3,38 +3,37 @@ import { Canvas } from "@react-three/fiber";
 import { Text, Float, Image, useVideoTexture } from "@react-three/drei";
 
 /* ---------------- CAMERA ---------------- */
-// Cranked to 65 to get that deep, stretched cinematic perspective
 const FOV = 65; 
 
-/* ---------------- THE TIGHT COLLAGE LAYOUT ---------------- */
-// Coordinates manually squeezed inward to hug the text and overlap slightly, 
-// matching the exact claustrophobic tunnel feel of the Framer reference.
+/* ---------------- THE BREATHING COLLAGE LAYOUT ---------------- */
+// Pushed X and Y coordinates further out. 
+// This creates a wide tunnel that frames the logo instead of suffocating it.
 const PANELS = [
-  // CLOSE RING
-  { pos: [-3.5, 0.5, 1],   rot: [0, Math.PI / 4, 0],  scale: [2.5, 1.5], type: 'video' },
-  { pos: [3.5, -0.5, 1],   rot: [0, -Math.PI / 4, 0], scale: [2.5, 1.5], type: 'video' },
+  // CLOSE RING (Wider to clear the text edges)
+  { pos: [-5, 1.5, -1],   rot: [0, Math.PI / 5, 0],  scale: [2.5, 1.5], type: 'video' },
+  { pos: [5, -1.5, -1],   rot: [0, -Math.PI / 5, 0], scale: [2.5, 1.5], type: 'video' },
   
-  // MID RING (Left)
-  { pos: [-5, -2, -2],     rot: [0, Math.PI / 4, 0],  scale: [2.8, 1.7], type: 'image' },
-  { pos: [-6, 2.5, -5],    rot: [0, Math.PI / 4, 0],  scale: [3, 1.8],   type: 'image' },
-  { pos: [-7, -1, -8],     rot: [0, Math.PI / 4, 0],  scale: [3.5, 2],   type: 'video' },
+  // MID RING (Left Wall - Pushed deeper and further left)
+  { pos: [-7, -2.5, -5],  rot: [0, Math.PI / 5, 0],  scale: [3, 1.8],   type: 'image' },
+  { pos: [-8, 3, -9],     rot: [0, Math.PI / 5, 0],  scale: [3.5, 2],   type: 'image' },
+  { pos: [-9, -1, -14],   rot: [0, Math.PI / 6, 0],  scale: [4, 2.5],   type: 'video' },
 
-  // MID RING (Right)
-  { pos: [5, 2, -2],       rot: [0, -Math.PI / 4, 0], scale: [2.8, 1.7], type: 'image' },
-  { pos: [6, -2.5, -5],    rot: [0, -Math.PI / 4, 0], scale: [3, 1.8],   type: 'video' },
-  { pos: [7, 1, -8],       rot: [0, -Math.PI / 4, 0], scale: [3.5, 2],   type: 'image' },
+  // MID RING (Right Wall - Pushed deeper and further right)
+  { pos: [7, 2.5, -5],    rot: [0, -Math.PI / 5, 0], scale: [3, 1.8],   type: 'image' },
+  { pos: [8, -3, -9],     rot: [0, -Math.PI / 5, 0], scale: [3.5, 2],   type: 'video' },
+  { pos: [9, 1, -14],     rot: [0, -Math.PI / 6, 0], scale: [4, 2.5],   type: 'image' },
 
-  // TOP WALL (Ceiling)
-  { pos: [-1.5, 3.5, -1],  rot: [Math.PI / 4, 0, 0],  scale: [2.5, 1.5], type: 'image' },
-  { pos: [2, 4.5, -4],     rot: [Math.PI / 4, 0, 0],  scale: [3, 1.8],   type: 'video' },
+  // TOP WALL (Ceiling - Pushed higher)
+  { pos: [-2.5, 4.5, -3], rot: [Math.PI / 5, 0, 0],  scale: [2.8, 1.6], type: 'image' },
+  { pos: [3, 6, -8],      rot: [Math.PI / 5, 0, 0],  scale: [3.5, 2],   type: 'video' },
 
-  // BOTTOM WALL (Floor)
-  { pos: [1.5, -3.5, -1],  rot: [-Math.PI / 4, 0, 0], scale: [2.5, 1.5], type: 'image' },
-  { pos: [-2, -4.5, -4],   rot: [-Math.PI / 4, 0, 0], scale: [3, 1.8],   type: 'video' },
+  // BOTTOM WALL (Floor - Pushed lower)
+  { pos: [2.5, -4.5, -3], rot: [-Math.PI / 5, 0, 0], scale: [2.8, 1.6], type: 'image' },
+  { pos: [-3, -6, -8],    rot: [-Math.PI / 5, 0, 0], scale: [3.5, 2],   type: 'video' },
 
-  // DEEP BACKGROUND
-  { pos: [-1, -0.5, -12],  rot: [0, 0.1, 0],          scale: [4, 2.5],   type: 'image' },
-  { pos: [2, 1, -15],      rot: [0, -0.1, 0],         scale: [4.5, 2.8], type: 'video' }
+  // DEEP BACKGROUND (Shifted to dodge the text)
+  { pos: [-2, -1, -20],   rot: [0, 0.1, 0],          scale: [5, 3],     type: 'image' },
+  { pos: [3, 2, -22],     rot: [0, -0.1, 0],         scale: [5.5, 3.2], type: 'video' }
 ];
 
 /* ---------------- MEDIA SOURCES ---------------- */
@@ -49,7 +48,6 @@ const VideoPlane = ({ data, url }: any) => {
   return (
     <mesh position={data.pos} rotation={data.rot}>
       <planeGeometry args={data.scale} />
-      {/* Dimmed so the white logo cuts through the noise */}
       <meshBasicMaterial map={texture} toneMapped={false} color="#999999" />
     </mesh>
   );
@@ -83,16 +81,17 @@ const MediaPanel = ({ data, index }: any) => {
 };
 
 const CentralLogo = () => (
-  // Z=-3 sits just behind the close ring of images, creating tight overlap
+  // Fixed at Z=-3 to sit between the close and mid rings
   <group position={[0, 0, -3]}>
     <Text
-      fontSize={1.2} 
-      scale={[1.8, 1, 1]} // Aggressively stretched X-axis
-      letterSpacing={-0.08} // Squashed letters
+      // THE FONT IS BACK. Wrapped globally in Suspense so it won't crash.
+      font="https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-Qxqse07RXg.woff"
+      fontSize={1.1} 
+      scale={[1.7, 1, 1]} // Still stretching it to mimic the vector width
+      letterSpacing={-0.08}
       color="#ffffff"
-      // This is the magic. Forcing a massive stroke width artificially 
-      // turns the thin default font into a heavy, blocky logo.
-      strokeWidth={0.06} 
+      // Reduced stroke because the heavy font will do most of the work now
+      strokeWidth={0.015} 
       strokeColor="#ffffff"
       anchorX="center"
       anchorY="middle"
@@ -100,12 +99,11 @@ const CentralLogo = () => (
       PANORAMA
     </Text>
     <Text
-      fontSize={0.2}
-      position={[0, -0.9, 0]}
+      font="https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-Qxqse07RXg.woff"
+      fontSize={0.18}
+      position={[0, -0.85, 0]}
       letterSpacing={2}
       color="#ffffff"
-      strokeWidth={0.005} // Subtle thickness for the subtext
-      strokeColor="#ffffff"
       anchorX="center"
       anchorY="middle"
     >
@@ -152,8 +150,9 @@ export default function TunnelScene() {
         gl={{ antialias: true, alpha: true }}
         style={{ position: "absolute", inset: 0, zIndex: 2 }}
       >
+        {/* GLOBAL SUSPENSE: This is what keeps the font and videos from breaking your screen */}
         <Suspense fallback={null}>
-          <fog attach="fog" args={["#000000", 2, 18]} />
+          <fog attach="fog" args={["#000000", 2, 22]} />
           <ambientLight intensity={1} />
 
           <CentralLogo />
