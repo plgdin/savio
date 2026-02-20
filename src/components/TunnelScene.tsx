@@ -4,10 +4,9 @@ import { Image, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
 
 // --- Configuration ---
-// Lower FOV creates that "compressed" look from the reference screenshot
-const FOV_WARP = 85; 
+// Lower FOV creates the compressed "tunnel" perspective from the reference
+const FOV_WARP = 80; 
 
-// Denser, overlapping data to match the high-end Framer look
 const TUNNEL_DATA = [
   // --- LEFT SIDE ---
   { pos: [-10, 2, 12],   rot: [0, Math.PI / 4, 0],   scale: [9, 6] }, 
@@ -42,22 +41,23 @@ const StaticFixedImage = ({ data, index }: StaticFixedImageProps) => {
   const url = useMemo(() => `https://picsum.photos/800/500?random=${index + 200}`, [index]);
   
   return (
-    <Float speed={1.5} rotationIntensity={0.1} floatIntensity={0.2}>
+    <Float speed={2} rotationIntensity={0.05} floatIntensity={0.1}>
       <group 
         position={data.pos as [number, number, number]} 
         rotation={data.rot as [number, number, number]}
       >
         <Image 
           url={url} 
-          // FIX: Pass scale as [width, height] array to satisfy @react-three/drei types
           scale={[data.scale[0], data.scale[1]]} 
           transparent 
-          opacity={0.9} 
+          opacity={0.8}
+          // DIMMING FIX: Use color tinting instead of the non-existent 'brightness' prop
+          color="#888888" 
           toneMapped={false}
         />
         <lineSegments>
            <edgesGeometry args={[new THREE.PlaneGeometry(data.scale[0], data.scale[1])]} />
-           <lineBasicMaterial color="#222" transparent opacity={0.5} />
+          <lineBasicMaterial color="#333" transparent opacity={0.3} />
         </lineSegments>
       </group>
     </Float>
@@ -65,23 +65,24 @@ const StaticFixedImage = ({ data, index }: StaticFixedImageProps) => {
 };
 
 const WireframeTube = () => {
-  const gridColor = "#080808"; 
-  const sectionColor = "#151515";
   const size = 150;
   const divisions = 60;
+  // Pushing the grid slightly further out than the images to prevent clipping/overlapping
+  const wallOffset = 14;
+  const floorOffset = 10;
 
   return (
     <group position={[0, 0, -30]}>
-      <gridHelper args={[size, divisions, sectionColor, gridColor]} position={[0, -9, 0]} />
-      <gridHelper args={[size, divisions, sectionColor, gridColor]} position={[0, 9, 0]} />
+      <gridHelper args={[size, divisions, "#111", "#050505"]} position={[0, -floorOffset, 0]} />
+      <gridHelper args={[size, divisions, "#111", "#050505"]} position={[0, floorOffset, 0]} />
       <gridHelper 
-        args={[size, divisions, sectionColor, gridColor]} 
-        position={[-13, 0, 0]} 
+        args={[size, divisions, "#111", "#050505"]}
+        position={[-wallOffset, 0, 0]} 
         rotation={[0, 0, Math.PI / 2]} 
       />
       <gridHelper 
-        args={[size, divisions, sectionColor, gridColor]} 
-        position={[13, 0, 0]} 
+        args={[size, divisions, "#111", "#050505"]}
+        position={[wallOffset, 0, 0]} 
         rotation={[0, 0, Math.PI / 2]} 
       />
     </group>
@@ -93,18 +94,20 @@ const CentralLogo = () => {
     <group position={[0, 0, -25]}> 
       <Text
         font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
-        fontSize={6}
-        letterSpacing={-0.1}
+        fontSize={6.5}
+        scale={[1.2, 0.85, 1]} // Squashed height + extended width for a heavy look
+        letterSpacing={-0.06}
         color="white"
         fontWeight={900}
       >
         PANORAMA
       </Text>
       <Text
-        fontSize={0.8}
-        position={[0, -3.2, 0]}
-        letterSpacing={0.8}
+        fontSize={0.7}
+        position={[0, -3.4, 0]}
+        letterSpacing={1} 
         color="white"
+        fontWeight={400}
       >
         FILMS
       </Text>
@@ -119,12 +122,12 @@ export default function TunnelScene() {
         camera={{ position: [0, 0, 20], fov: FOV_WARP }} 
         gl={{ 
             antialias: true,
-            logarithmicDepthBuffer: true // Prevents flickering on overlapping elements
+          logarithmicDepthBuffer: true // Fixes z-fighting on overlapping images
         }}
       >
         <color attach="background" args={['#000000']} />
-        <fog attach="fog" args={['#000000', 5, 60]} />
-        <ambientLight intensity={0.5} />
+        <fog attach="fog" args={['#000000', 5, 55]} />
+        <ambientLight intensity={0.4} />
         <group>
           <WireframeTube />
           <CentralLogo />
