@@ -1,6 +1,6 @@
 import React, { Suspense, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Text, Float, Image, useVideoTexture, ScrollControls, useScroll } from "@react-three/drei";
+import { Text, Float, Image, ScrollControls, useScroll } from "@react-three/drei";
 import * as THREE from "three";
 
 const FOV = 65; 
@@ -8,31 +8,26 @@ const FOV = 65;
 /* ---------------- CONTROLLED CHAOS LAYOUT ---------------- */
 const PANELS = [
   // CLOSE RING (Framing the entrance)
-  { pos: [-4.5, 1.2, -1], rot: [0.1, Math.PI / 5, 0.05], scale: [2.5, 1.5], type: 'video' },
-  { pos: [5.2, -1.5, -1.5], rot: [-0.1, -Math.PI / 6, 0], scale: [2.8, 1.7], type: 'video' },
+  { pos: [-4.5, 1.2, -1], rot: [0.1, Math.PI / 5, 0.05], scale: [2.5, 1.5], type: 'video_placeholder' },
+  { pos: [5.2, -1.5, -1.5], rot: [-0.1, -Math.PI / 6, 0], scale: [2.8, 1.7], type: 'video_placeholder' },
 
   // MID RING (The core walls)
   { pos: [-7.5, -2, -5],     rot: [0, Math.PI / 4, 0.1],      scale: [3.2, 1.9], type: 'image' },
   { pos: [6.5, 2.8, -4.5],   rot: [0, -Math.PI / 5, -0.1],    scale: [3, 1.8],   type: 'image' },
   
-  { pos: [-8, 3.5, -10],     rot: [0.2, Math.PI / 5, 0],      scale: [3.8, 2.2], type: 'video' },
-  { pos: [8.5, -2.5, -9],    rot: [-0.1, -Math.PI / 4, 0],    scale: [3.5, 2],   type: 'video' },
+  { pos: [-8, 3.5, -10], rot: [0.2, Math.PI / 5, 0], scale: [3.8, 2.2], type: 'video_placeholder' },
+  { pos: [8.5, -2.5, -9], rot: [-0.1, -Math.PI / 4, 0], scale: [3.5, 2], type: 'video_placeholder' },
 
-  // CEILING & FLOOR (Organic angles)
+  // CEILING & FLOOR
   { pos: [-1.5, 5, -3.5],    rot: [Math.PI / 4, 0.1, 0.05],   scale: [2.8, 1.6], type: 'image' },
-  { pos: [2.5, 6.5, -8],     rot: [Math.PI / 5, -0.1, 0],     scale: [3.5, 2],   type: 'video' },
+  { pos: [2.5, 6.5, -8], rot: [Math.PI / 5, -0.1, 0], scale: [3.5, 2], type: 'video_placeholder' },
 
   { pos: [2, -5.5, -4],      rot: [-Math.PI / 4, -0.1, 0],    scale: [3, 1.8],   type: 'image' },
-  { pos: [-3.5, -6, -9],     rot: [-Math.PI / 5, 0.2, 0.05],  scale: [3.8, 2.2], type: 'video' },
+  { pos: [-3.5, -6, -9], rot: [-Math.PI / 5, 0.2, 0.05], scale: [3.8, 2.2], type: 'video_placeholder' },
 
-  // DEEP BACKGROUND (The vanishing point)
+  // DEEP BACKGROUND
   { pos: [-3, -1.5, -18],    rot: [0.05, 0.2, 0],             scale: [5, 3],     type: 'image' },
-  { pos: [4, 2, -20],        rot: [-0.05, -0.15, 0],          scale: [6, 3.5],   type: 'video' }
-];
-
-const VIDEOS = [
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+  { pos: [4, 2, -20], rot: [-0.05, -0.15, 0], scale: [6, 3.5], type: 'video_placeholder' }
 ];
 
 /* ---------------- CINEMATIC CAMERA CONTROLLER ---------------- */
@@ -41,7 +36,7 @@ const CameraController = () => {
 
   useFrame((state) => {
     // 1. Spawns zoomed-in extremely tight (Z=-1)
-    // 2. Instantly yanks backwards to Z=5 on load (The Framer Reveal)
+    // 2. Instantly yanks backwards to Z=5 on load
     // 3. Scrolling pushes you deep into the tunnel to Z=-15
     const targetZ = 5 - scroll.offset * 20; 
     state.camera.position.lerp(new THREE.Vector3(0, 0, targetZ), 0.06); 
@@ -51,22 +46,25 @@ const CameraController = () => {
 };
 
 /* ---------------- COMPONENTS ---------------- */
-const VideoPlane = ({ data, url }: any) => {
-  const texture = useVideoTexture(url, { crossOrigin: "Anonymous" });
+
+// THE FIX: Completely stripped out useVideoTexture so WebGL cannot crash.
+// This just renders a dark grey box where your videos will eventually go.
+const VideoPlaceholder = ({ data }: any) => {
   return (
     <mesh position={data.pos} rotation={data.rot}>
       <planeGeometry args={data.scale} />
-      <meshBasicMaterial map={texture} toneMapped={false} color="#999999" />
+      <meshBasicMaterial color="#222222" wireframe={false} />
+      <meshBasicMaterial color="#ffffff" wireframe={true} /> 
     </mesh>
   );
 };
 
 const ImagePlane = ({ data, index }: any) => {
-  const url = useMemo(() => `https://picsum.photos/800/500?random=${index + 300}`, [index]);
+  const url = useMemo(() => `https://picsum.photos/800/500?random=${index + 400}`, [index]);
   return (
     <Image 
       position={data.pos} rotation={data.rot} url={url} 
-      scale={data.scale} transparent opacity={0.9} 
+      scale={data.scale} transparent opacity={0.8} 
       color="#999999" toneMapped={false} 
     />
   );
@@ -75,8 +73,8 @@ const ImagePlane = ({ data, index }: any) => {
 const MediaPanel = ({ data, index }: any) => {
   return (
     <Float speed={2} rotationIntensity={0.08} floatIntensity={0.15}>
-      {data.type === 'video' 
-        ? <VideoPlane data={data} url={VIDEOS[index % VIDEOS.length]} />
+      {data.type === 'video_placeholder'
+        ? <VideoPlaceholder data={data} />
         : <ImagePlane data={data} index={index} />
       }
     </Float>
@@ -87,7 +85,6 @@ const MediaPanel = ({ data, index }: any) => {
 const CentralLogo = () => (
   <group position={[0, 0, -3]}>
     <Text
-      // ABSOLUTELY NO FONT URL. Using the default font + thick stroke hack.
       fontSize={1.1} 
       scale={[1.7, 1, 1]} 
       letterSpacing={-0.08}
@@ -132,7 +129,6 @@ export default function TunnelScene() {
         }} 
       />
 
-      {/* Spawns camera at Z = -1 for the instant snap-back zoom effect */}
       <Canvas camera={{ position: [0, 0, -1], fov: FOV }} gl={{ antialias: true, alpha: true }} style={{ position: "absolute", inset: 0, zIndex: 2 }}>
         <Suspense fallback={null}>
           <ScrollControls pages={3} damping={0.25}>
