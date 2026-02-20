@@ -48,7 +48,8 @@ const VideoPlane = ({ data, url }: any) => {
       rotation={data.rot}
     >
       <planeGeometry args={data.scale} />
-      <meshBasicMaterial map={texture} toneMapped={false} />
+      {/* Keeping color dim so the text pops */}
+      <meshBasicMaterial map={texture} toneMapped={false} color="#999" />
     </mesh>
   );
 };
@@ -74,11 +75,13 @@ const TunnelVideo = ({ data, index }: any) => {
 const CentralLogo = () => (
   <group position={[0, 0, -6]}>
     <Text
-      font="https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-Qxqse07RXg.woff"
+      // REMOVED THE BROKEN FONT URL. Using the default font prevents the crash.
       fontSize={2.4}
       scale={[2.2, 1, 1]}
       letterSpacing={-0.08}
       color="#ffffff"
+      strokeWidth={0.05} // Added stroke to fake the heavy thickness
+      strokeColor="#ffffff"
       anchorX="center"
       anchorY="middle"
     >
@@ -86,7 +89,6 @@ const CentralLogo = () => (
     </Text>
 
     <Text
-      font="https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-Qxqse07RXg.woff"
       fontSize={0.35}
       position={[0, -1.5, 0]}
       letterSpacing={1.6}
@@ -139,14 +141,17 @@ export default function TunnelScene() {
         gl={{ antialias: true, alpha: true }}
         style={{ position: "absolute", inset: 0, zIndex: 1 }}
       >
-        <fog attach="fog" args={["#000000", 8, 35]} />
-        <ambientLight intensity={1} />
+        {/* GLOBAL SUSPENSE: If any texture or text fails to load, this stops the whole screen from going black */}
+        <Suspense fallback={null}>
+          <fog attach="fog" args={["#000000", 8, 35]} />
+          <ambientLight intensity={1} />
 
-        <CentralLogo />
+          <CentralLogo />
 
-        {PANELS.map((panel, i) => (
-          <TunnelVideo key={i} data={panel} index={i} />
-        ))}
+          {PANELS.map((panel, i) => (
+            <TunnelVideo key={i} data={panel} index={i} />
+          ))}
+        </Suspense>
       </Canvas>
     </div>
   );
