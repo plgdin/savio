@@ -8,26 +8,26 @@ const FOV = 65;
 /* ---------------- CONTROLLED CHAOS LAYOUT ---------------- */
 const PANELS = [
   // CLOSE RING (Framing the entrance)
-  { pos: [-4.5, 1.2, -1], rot: [0.1, Math.PI / 5, 0.05], scale: [2.5, 1.5], type: 'video_placeholder' },
-  { pos: [5.2, -1.5, -1.5], rot: [-0.1, -Math.PI / 6, 0], scale: [2.8, 1.7], type: 'video_placeholder' },
+  { pos: [-4.5, 1.2, -1],    rot: [0.1, Math.PI / 5, 0.05],   scale: [2.5, 1.5], type: 'video_placeholder' },
+  { pos: [5.2, -1.5, -1.5],  rot: [-0.1, -Math.PI / 6, 0],    scale: [2.8, 1.7], type: 'video_placeholder' },
 
   // MID RING (The core walls)
   { pos: [-7.5, -2, -5],     rot: [0, Math.PI / 4, 0.1],      scale: [3.2, 1.9], type: 'image' },
   { pos: [6.5, 2.8, -4.5],   rot: [0, -Math.PI / 5, -0.1],    scale: [3, 1.8],   type: 'image' },
   
-  { pos: [-8, 3.5, -10], rot: [0.2, Math.PI / 5, 0], scale: [3.8, 2.2], type: 'video_placeholder' },
-  { pos: [8.5, -2.5, -9], rot: [-0.1, -Math.PI / 4, 0], scale: [3.5, 2], type: 'video_placeholder' },
+  { pos: [-8, 3.5, -10],     rot: [0.2, Math.PI / 5, 0],      scale: [3.8, 2.2], type: 'video_placeholder' },
+  { pos: [8.5, -2.5, -9],    rot: [-0.1, -Math.PI / 4, 0],    scale: [3.5, 2],   type: 'video_placeholder' },
 
   // CEILING & FLOOR
   { pos: [-1.5, 5, -3.5],    rot: [Math.PI / 4, 0.1, 0.05],   scale: [2.8, 1.6], type: 'image' },
-  { pos: [2.5, 6.5, -8], rot: [Math.PI / 5, -0.1, 0], scale: [3.5, 2], type: 'video_placeholder' },
+  { pos: [2.5, 6.5, -8],     rot: [Math.PI / 5, -0.1, 0],     scale: [3.5, 2],   type: 'video_placeholder' },
 
   { pos: [2, -5.5, -4],      rot: [-Math.PI / 4, -0.1, 0],    scale: [3, 1.8],   type: 'image' },
-  { pos: [-3.5, -6, -9], rot: [-Math.PI / 5, 0.2, 0.05], scale: [3.8, 2.2], type: 'video_placeholder' },
+  { pos: [-3.5, -6, -9],     rot: [-Math.PI / 5, 0.2, 0.05],  scale: [3.8, 2.2], type: 'video_placeholder' },
 
   // DEEP BACKGROUND
   { pos: [-3, -1.5, -18],    rot: [0.05, 0.2, 0],             scale: [5, 3],     type: 'image' },
-  { pos: [4, 2, -20], rot: [-0.05, -0.15, 0], scale: [6, 3.5], type: 'video_placeholder' }
+  { pos: [4, 2, -20],        rot: [-0.05, -0.15, 0],          scale: [6, 3.5],   type: 'video_placeholder' }
 ];
 
 /* ---------------- CINEMATIC CAMERA CONTROLLER ---------------- */
@@ -73,7 +73,7 @@ const ImagePlane = ({ data, index }: any) => {
 const MediaPanel = ({ data, index }: any) => {
   return (
     <Float speed={2} rotationIntensity={0.08} floatIntensity={0.15}>
-      {data.type === 'video_placeholder'
+      {data.type === 'video_placeholder' 
         ? <VideoPlaceholder data={data} />
         : <ImagePlane data={data} index={index} />
       }
