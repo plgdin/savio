@@ -3,35 +3,41 @@ import { Canvas } from "@react-three/fiber";
 import { Text, Float, Image, useVideoTexture } from "@react-three/drei";
 
 /* ---------------- CAMERA ---------------- */
-const FOV = 50;
+// Cranked to 65 to get that deep, stretched cinematic perspective
+const FOV = 65; 
 
-/* ---------------- THE STRICT TUNNEL LAYOUT ---------------- */
-// Mathematically building the 4 walls of the tunnel to match the Framer perspective box.
+/* ---------------- THE TIGHT COLLAGE LAYOUT ---------------- */
+// Coordinates manually squeezed inward to hug the text and overlap slightly, 
+// matching the exact claustrophobic tunnel feel of the Framer reference.
 const PANELS = [
-  // LEFT WALL (Angled inward at 60 degrees)
-  { pos: [-6, 1, -4],    rot: [0, Math.PI / 3, 0], scale: [3, 1.8], type: 'video' },
-  { pos: [-8, -2, -10],  rot: [0, Math.PI / 3, 0], scale: [4, 2.5], type: 'image' },
-  { pos: [-10, 3, -16],  rot: [0, Math.PI / 3, 0], scale: [5, 3],   type: 'video' },
+  // CLOSE RING
+  { pos: [-3.5, 0.5, 1],   rot: [0, Math.PI / 4, 0],  scale: [2.5, 1.5], type: 'video' },
+  { pos: [3.5, -0.5, 1],   rot: [0, -Math.PI / 4, 0], scale: [2.5, 1.5], type: 'video' },
+  
+  // MID RING (Left)
+  { pos: [-5, -2, -2],     rot: [0, Math.PI / 4, 0],  scale: [2.8, 1.7], type: 'image' },
+  { pos: [-6, 2.5, -5],    rot: [0, Math.PI / 4, 0],  scale: [3, 1.8],   type: 'image' },
+  { pos: [-7, -1, -8],     rot: [0, Math.PI / 4, 0],  scale: [3.5, 2],   type: 'video' },
 
-  // RIGHT WALL (Angled inward at -60 degrees)
-  { pos: [6, -1, -4],    rot: [0, -Math.PI / 3, 0], scale: [3, 1.8], type: 'image' },
-  { pos: [8, 2, -10],    rot: [0, -Math.PI / 3, 0], scale: [4, 2.5], type: 'video' },
-  { pos: [10, -3, -16],  rot: [0, -Math.PI / 3, 0], scale: [5, 3],   type: 'image' },
+  // MID RING (Right)
+  { pos: [5, 2, -2],       rot: [0, -Math.PI / 4, 0], scale: [2.8, 1.7], type: 'image' },
+  { pos: [6, -2.5, -5],    rot: [0, -Math.PI / 4, 0], scale: [3, 1.8],   type: 'video' },
+  { pos: [7, 1, -8],       rot: [0, -Math.PI / 4, 0], scale: [3.5, 2],   type: 'image' },
 
-  // CEILING / TOP WALL (Angled down at 60 degrees)
-  { pos: [-2, 4.5, -6],  rot: [Math.PI / 3, 0, 0], scale: [3.5, 2],   type: 'image' },
-  { pos: [3, 6.5, -12],  rot: [Math.PI / 3, 0, 0], scale: [4.5, 2.5], type: 'video' },
+  // TOP WALL (Ceiling)
+  { pos: [-1.5, 3.5, -1],  rot: [Math.PI / 4, 0, 0],  scale: [2.5, 1.5], type: 'image' },
+  { pos: [2, 4.5, -4],     rot: [Math.PI / 4, 0, 0],  scale: [3, 1.8],   type: 'video' },
 
-  // FLOOR / BOTTOM WALL (Angled up at -60 degrees)
-  { pos: [2, -4.5, -6],  rot: [-Math.PI / 3, 0, 0], scale: [3.5, 2],   type: 'video' },
-  { pos: [-3, -6.5, -12],rot: [-Math.PI / 3, 0, 0], scale: [4.5, 2.5], type: 'image' },
+  // BOTTOM WALL (Floor)
+  { pos: [1.5, -3.5, -1],  rot: [-Math.PI / 4, 0, 0], scale: [2.5, 1.5], type: 'image' },
+  { pos: [-2, -4.5, -4],   rot: [-Math.PI / 4, 0, 0], scale: [3, 1.8],   type: 'video' },
 
-  // DEEP CENTER VOID
-  { pos: [0, 0, -22],    rot: [0, 0, 0], scale: [6, 3.5], type: 'video' }
+  // DEEP BACKGROUND
+  { pos: [-1, -0.5, -12],  rot: [0, 0.1, 0],          scale: [4, 2.5],   type: 'image' },
+  { pos: [2, 1, -15],      rot: [0, -0.1, 0],         scale: [4.5, 2.8], type: 'video' }
 ];
 
 /* ---------------- MEDIA SOURCES ---------------- */
-// Safe, open-source mp4s. Swap with your own later.
 const VIDEOS = [
   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
@@ -43,14 +49,14 @@ const VideoPlane = ({ data, url }: any) => {
   return (
     <mesh position={data.pos} rotation={data.rot}>
       <planeGeometry args={data.scale} />
-      {/* Keeping color dim so the text remains the brightest object */}
-      <meshBasicMaterial map={texture} toneMapped={false} color="#888888" />
+      {/* Dimmed so the white logo cuts through the noise */}
+      <meshBasicMaterial map={texture} toneMapped={false} color="#999999" />
     </mesh>
   );
 };
 
 const ImagePlane = ({ data, index }: any) => {
-  const url = useMemo(() => `https://picsum.photos/800/500?random=${index + 50}`, [index]);
+  const url = useMemo(() => `https://picsum.photos/800/500?random=${index + 200}`, [index]);
   return (
     <Image 
       position={data.pos} 
@@ -59,7 +65,7 @@ const ImagePlane = ({ data, index }: any) => {
       scale={data.scale} 
       transparent 
       opacity={0.9} 
-      color="#888888" 
+      color="#999999" 
       toneMapped={false} 
     />
   );
@@ -67,7 +73,7 @@ const ImagePlane = ({ data, index }: any) => {
 
 const MediaPanel = ({ data, index }: any) => {
   return (
-    <Float speed={1.5} rotationIntensity={0.05} floatIntensity={0.1}>
+    <Float speed={2} rotationIntensity={0.05} floatIntensity={0.1}>
       {data.type === 'video' 
         ? <VideoPlane data={data} url={VIDEOS[index % VIDEOS.length]} />
         : <ImagePlane data={data} index={index} />
@@ -77,14 +83,16 @@ const MediaPanel = ({ data, index }: any) => {
 };
 
 const CentralLogo = () => (
-  // Pushed to Z=-8. Perfectly sized to avoid bleeding off the monitor.
-  <group position={[0, 0, -8]}>
+  // Z=-3 sits just behind the close ring of images, creating tight overlap
+  <group position={[0, 0, -3]}>
     <Text
-      fontSize={0.8} // Safely scaled down. No more screen-breaking giant text.
-      scale={[1.6, 1, 1]} // X-Stretch to brutally fake the custom Framer vector look
-      letterSpacing={-0.05}
+      fontSize={1.2} 
+      scale={[1.8, 1, 1]} // Aggressively stretched X-axis
+      letterSpacing={-0.08} // Squashed letters
       color="#ffffff"
-      strokeWidth={0.02} 
+      // This is the magic. Forcing a massive stroke width artificially 
+      // turns the thin default font into a heavy, blocky logo.
+      strokeWidth={0.06} 
       strokeColor="#ffffff"
       anchorX="center"
       anchorY="middle"
@@ -92,10 +100,12 @@ const CentralLogo = () => (
       PANORAMA
     </Text>
     <Text
-      fontSize={0.15}
-      position={[0, -0.75, 0]}
-      letterSpacing={1.8}
+      fontSize={0.2}
+      position={[0, -0.9, 0]}
+      letterSpacing={2}
       color="#ffffff"
+      strokeWidth={0.005} // Subtle thickness for the subtext
+      strokeColor="#ffffff"
       anchorX="center"
       anchorY="middle"
     >
@@ -116,7 +126,7 @@ export default function TunnelScene() {
         overflow: "hidden",
       }}
     >
-      {/* 1. BACKGROUND VIDEO (From your Framer DOM screenshot) */}
+      {/* 1. BACKGROUND VIDEO */}
       <video
         autoPlay loop muted playsInline
         style={{
@@ -127,7 +137,7 @@ export default function TunnelScene() {
         <source src="https://framerusercontent.com/assets/b318xptt3gA2YnoeksZKkHw7hiG.mp4" type="video/mp4" />
       </video>
 
-      {/* 2. CSS 2D GRID OVERLAY (Matches the Framer aesthetic perfectly) */}
+      {/* 2. CSS 2D GRID OVERLAY */}
       <div 
         style={{ 
           position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
@@ -138,13 +148,12 @@ export default function TunnelScene() {
 
       {/* 3. 3D TUNNEL CANVAS */}
       <Canvas
-        camera={{ position: [0, 0, 0], fov: FOV }}
+        camera={{ position: [0, 0, 4], fov: FOV }}
         gl={{ antialias: true, alpha: true }}
         style={{ position: "absolute", inset: 0, zIndex: 2 }}
       >
-        {/* Global Suspense protects against black screen crashes if a texture fails to load */}
         <Suspense fallback={null}>
-          <fog attach="fog" args={["#000000", 4, 25]} />
+          <fog attach="fog" args={["#000000", 2, 18]} />
           <ambientLight intensity={1} />
 
           <CentralLogo />
