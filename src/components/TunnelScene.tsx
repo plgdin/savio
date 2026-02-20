@@ -1,41 +1,37 @@
 import React, { Suspense, useEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Text, Float } from "@react-three/drei";
+import { Text, Float, Image, useVideoTexture } from "@react-three/drei";
 import * as THREE from "three";
 
 const FOV = 65; 
 
-/* ---------------- THE BREATHING COLLAGE LAYOUT ---------------- */
+/* ---------------- THE CONTROLLED CHAOS LAYOUT ---------------- */
+// Notice how every panel now points to a local file in your public folder.
 const PANELS = [
-  { pos: [-5, 1.5, -1],   rot: [0, Math.PI / 5, 0],  scale: [2.5, 1.5], color: "#ff4444" },
-  { pos: [5, -1.5, -1],   rot: [0, -Math.PI / 5, 0], scale: [2.5, 1.5], color: "#4444ff" },
-  { pos: [-7, -2.5, -5],  rot: [0, Math.PI / 5, 0],  scale: [3, 1.8],   color: "#44ff44" },
-  { pos: [-8, 3, -9],     rot: [0, Math.PI / 5, 0],  scale: [3.5, 2],   color: "#ffff44" },
-  { pos: [-9, -1, -14],   rot: [0, Math.PI / 6, 0],  scale: [4, 2.5],   color: "#ff44ff" },
-  { pos: [7, 2.5, -5],    rot: [0, -Math.PI / 5, 0], scale: [3, 1.8],   color: "#44ffff" },
-  { pos: [8, -3, -9],     rot: [0, -Math.PI / 5, 0], scale: [3.5, 2],   color: "#ff8844" },
-  { pos: [9, 1, -14],     rot: [0, -Math.PI / 6, 0], scale: [4, 2.5],   color: "#8844ff" },
-  { pos: [-2.5, 4.5, -3], rot: [Math.PI / 5, 0, 0],  scale: [2.8, 1.6], color: "#44ff88" },
-  { pos: [3, 6, -8],      rot: [Math.PI / 5, 0, 0],  scale: [3.5, 2],   color: "#ff4444" },
-  { pos: [2.5, -4.5, -3], rot: [-Math.PI / 5, 0, 0], scale: [2.8, 1.6], color: "#4444ff" },
-  { pos: [-3, -6, -8],    rot: [-Math.PI / 5, 0, 0], scale: [3.5, 2],   color: "#44ff44" },
-  { pos: [-2, -1, -20],   rot: [0, 0.1, 0],          scale: [5, 3],     color: "#555555" },
-  { pos: [3, 2, -22],     rot: [0, -0.1, 0],         scale: [5.5, 3.2], color: "#777777" }
+  { pos: [-4.5, 1.2, -1], rot: [0.1, Math.PI / 5, 0.05], scale: [2.5, 1.5], type: 'video', src: '/vid1.mp4' },
+  { pos: [5.2, -1.5, -1.5], rot: [-0.1, -Math.PI / 6, 0], scale: [2.8, 1.7], type: 'video', src: '/vid2.mp4' },
+  { pos: [-7.5, -2, -5], rot: [0, Math.PI / 4, 0.1], scale: [3.2, 1.9], type: 'image', src: '/img1.jpg' },
+  { pos: [6.5, 2.8, -4.5], rot: [0, -Math.PI / 5, -0.1], scale: [3, 1.8], type: 'image', src: '/img1.jpg' },
+  { pos: [-8, 3.5, -10], rot: [0.2, Math.PI / 5, 0], scale: [3.8, 2.2], type: 'video', src: '/vid1.mp4' },
+  { pos: [8.5, -2.5, -9], rot: [-0.1, -Math.PI / 4, 0], scale: [3.5, 2], type: 'video', src: '/vid2.mp4' },
+  { pos: [-1.5, 5, -3.5], rot: [Math.PI / 4, 0.1, 0.05], scale: [2.8, 1.6], type: 'image', src: '/img1.jpg' },
+  { pos: [2.5, 6.5, -8], rot: [Math.PI / 5, -0.1, 0], scale: [3.5, 2], type: 'video', src: '/vid1.mp4' },
+  { pos: [2, -5.5, -4], rot: [-Math.PI / 4, -0.1, 0], scale: [3, 1.8], type: 'image', src: '/img1.jpg' },
+  { pos: [-3.5, -6, -9], rot: [-Math.PI / 5, 0.2, 0.05], scale: [3.8, 2.2], type: 'video', src: '/vid2.mp4' },
+  { pos: [-3, -1.5, -18], rot: [0.05, 0.2, 0], scale: [5, 3], type: 'image', src: '/img1.jpg' },
+  { pos: [4, 2, -20], rot: [-0.05, -0.15, 0], scale: [6, 3.5], type: 'video', src: '/vid1.mp4' }
 ];
 
-/* ---------------- CUSTOM BULLETPROOF CAMERA CONTROLLER ---------------- */
+/* ---------------- CAMERA CONTROLLER ---------------- */
 const CameraController = () => {
   const targetZ = useRef(4); 
-  // We extract the raw Three.js camera object directly from the Fiber context
   const { camera } = useThree();
 
   useEffect(() => {
-    // FORCE the camera deep into the tunnel immediately on mount. 
-    // It will spawn behind the text and violently pull backward.
+    // Cinematic snap-back start position
     camera.position.set(0, 0, -10);
 
     const handleWheel = (e: WheelEvent) => {
-      // Scroll down pushes you deeper into the tunnel
       const scrollDirection = e.deltaY > 0 ? -1 : 1; 
       targetZ.current = Math.max(-15, Math.min(4, targetZ.current + scrollDirection * 1.5));
     };
@@ -45,7 +41,6 @@ const CameraController = () => {
   }, [camera]);
 
   useFrame(() => {
-    // Smoothly lerps the camera from its forced -10 start position to the targetZ (4)
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ.current, 0.05);
   });
 
@@ -53,14 +48,31 @@ const CameraController = () => {
 };
 
 /* ---------------- COMPONENTS ---------------- */
-const SafePanel = ({ data }: any) => {
+const VideoPlane = ({ data }: any) => {
+  // Pulls the video directly from your public folder safely
+  const texture = useVideoTexture(data.src, { crossOrigin: "Anonymous" });
+  return (
+    <mesh position={data.pos} rotation={data.rot}>
+      <planeGeometry args={data.scale} />
+      <meshBasicMaterial map={texture} toneMapped={false} color="#aaaaaa" />
+    </mesh>
+  );
+};
+
+const ImagePlane = ({ data }: any) => {
+  return (
+    <Image
+      position={data.pos} rotation={data.rot} url={data.src}
+      scale={data.scale} transparent opacity={0.9}
+      color="#cccccc" toneMapped={false}
+    />
+  );
+};
+
+const MediaPanel = ({ data }: any) => {
   return (
     <Float speed={2} rotationIntensity={0.05} floatIntensity={0.1}>
-      <mesh position={data.pos} rotation={data.rot}>
-        <planeGeometry args={data.scale} />
-        <meshBasicMaterial color={data.color} wireframe={true} />
-        <meshBasicMaterial color="#111111" />
-      </mesh>
+      {data.type === 'video' ? <VideoPlane data={data} /> : <ImagePlane data={data} />}
     </Float>
   );
 };
@@ -116,14 +128,13 @@ export default function TunnelScene() {
       <Canvas gl={{ antialias: true, alpha: true }} style={{ position: "absolute", inset: 0, zIndex: 2 }}>
         <Suspense fallback={null}>
           <CameraController />
-          
           <fog attach="fog" args={["#000000", 2, 22]} />
           <ambientLight intensity={1} />
 
           <CentralLogo />
 
           {PANELS.map((panel, i) => (
-            <SafePanel key={i} data={panel} index={i} />
+            <MediaPanel key={i} data={panel} />
           ))}
         </Suspense>
       </Canvas>
