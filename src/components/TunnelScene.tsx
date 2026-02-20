@@ -3,72 +3,43 @@ import { Canvas } from '@react-three/fiber';
 import { Image, Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
 
-const FOV_WARP = 75; 
+// Exact math from the Framer DOM screenshot
+const DEG2RAD = Math.PI / 180;
+const FOV_WARP = 65; 
 
-// Mapped exactly to the 12 specific image floating points
-const EXACT_FRAMER_LAYOUT = [
-  // LEFT WALL
-  { pos: [-12, -1, -12],  rot: [0, Math.PI / 3, 0], scale: [8, 5] },   
-  { pos: [-18, 3, -25],   rot: [0, Math.PI / 4, 0], scale: [10, 6] },  
-  { pos: [-10, -5, -6],   rot: [0, Math.PI / 2.5, 0], scale: [9, 5] }, 
-
-  // RIGHT WALL
-  { pos: [12, 4, -8],     rot: [0, -Math.PI / 3, 0], scale: [10, 6] },  
-  { pos: [16, -1, -22],   rot: [0, -Math.PI / 4, 0], scale: [9, 5] },   
-  { pos: [10, -4, -5],    rot: [0, -Math.PI / 2.5, 0], scale: [8, 5] }, 
-
-  // TOP WALL
-  { pos: [-5, 7, -10],    rot: [Math.PI / 3, 0, 0], scale: [7, 4] },    
-  { pos: [4, 8, -15],     rot: [Math.PI / 4, 0, 0], scale: [8, 4.5] },  
-  { pos: [0, 5, -28],     rot: [Math.PI / 6, 0, 0], scale: [6, 3.5] },  
-
-  // BOTTOM WALL
-  { pos: [-3, -7, -8],    rot: [-Math.PI / 3, 0, 0], scale: [8, 4.5] }, 
-  { pos: [4, -9, -20],    rot: [-Math.PI / 4, 0, 0], scale: [10, 6] },  
-  
-  // DEEP CENTER LEFT
-  { pos: [-4, 1, -32],    rot: [0, Math.PI / 6, 0], scale: [5, 3] },    
-];
-
-interface StaticFixedImageProps {
-  data: { pos: number[]; rot: number[]; scale: number[]; };
+interface ImageProps {
+  pos: [number, number, number];
+  scale: [number, number];
   index: number;
 }
 
-const StaticFixedImage = ({ data, index }: StaticFixedImageProps) => {
-  const url = useMemo(() => `https://picsum.photos/800/500?random=${index + 500}`, [index]);
+const TunnelImage = ({ pos, scale, index }: ImageProps) => {
+  const url = useMemo(() => `https://picsum.photos/800/500?random=${index + 100}`, [index]);
   
   return (
-    <Float speed={1.5} rotationIntensity={0.05} floatIntensity={0.1}>
-      <group 
-        position={data.pos as [number, number, number]} 
-        rotation={data.rot as [number, number, number]}
-      >
-        <Image 
-          url={url} 
-          scale={[data.scale[0], data.scale[1]]} 
-          transparent 
-          opacity={0.9} 
-          color="#bbbbbb" // Darkens images so the text pops
-          toneMapped={false}
-        />
-      </group>
+    <Float speed={1.5} rotationIntensity={0.02} floatIntensity={0.05}>
+      <Image 
+        position={pos} 
+        url={url} 
+        scale={scale} 
+        transparent 
+        opacity={0.9} 
+        color="#c0c0c0" // Dims images slightly to match the Framer vibe
+        toneMapped={false} 
+      />
     </Float>
   );
 };
 
 const CentralLogo = () => {
   return (
-    // Z=-12 places it cleanly in the center of the tunnel, dodging image overlaps
-    <group position={[0, 0, -12]}> 
+    <group position={[0, 0, -8]}> 
       <Text
-        // FIX: Removed the buggy font URL. This uses the native default which WILL render.
-        fontSize={5.5}
-        scale={[1.4, 1, 1]} // Stretches it wide 
+        fontSize={4.5}
+        scale={[1.6, 1, 1]} // Aggressively stretches the X-axis to mimic the custom vector logo
         letterSpacing={-0.08}
         color="#ffffff"
-        // Force the text to look ultra-bold without needing a custom font file
-        strokeWidth={0.05}
+        strokeWidth={0.03}
         strokeColor="#ffffff" 
         anchorX="center"
         anchorY="middle"
@@ -76,9 +47,9 @@ const CentralLogo = () => {
         PANORAMA
       </Text>
       <Text
-        fontSize={0.65}
-        position={[0, -3.2, 0]}
-        letterSpacing={1.2} 
+        fontSize={0.5}
+        position={[0, -2.5, 0]}
+        letterSpacing={1.8} 
         color="#ffffff"
         anchorX="center"
         anchorY="middle"
@@ -93,38 +64,67 @@ export default function TunnelScene() {
   return (
     <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', position: 'relative', overflow: 'hidden' }}>
       
-      {/* BACKGROUND VIDEO */}
+      {/* EXACT FRAMER BACKGROUND VIDEO */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
         <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.3 }}
+          autoPlay loop muted playsInline
+          style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.4 }}
         >
-          {/* REPLACE THIS SRC WITH YOUR ACTUAL BACKGROUND VIDEO URL */}
-          <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
+          {/* Sourced directly from your DOM screenshot */}
+          <source src="https://framerusercontent.com/assets/b318xptt3gA2YnoeksZKkHw7hiG.mp4" type="video/mp4" />
         </video>
       </div>
 
-      {/* FRAMER GRID OVERLAY */}
-      <div className="framer-grid" style={{ zIndex: 1, position: 'absolute', inset: 0, pointerEvents: 'none' }} />
+      {/* CSS 2D GRID - Prevents 3D clipping */}
+      <div 
+        style={{ 
+          position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
+          backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)',
+          backgroundSize: '100px 100px'
+        }} 
+      />
       
       {/* 3D CANVAS */}
       <Canvas 
         camera={{ position: [0, 0, 5], fov: FOV_WARP }} 
-        // alpha: true allows the video behind the canvas to show through
-        gl={{ antialias: true, logarithmicDepthBuffer: true, alpha: true }} 
+        gl={{ antialias: true, alpha: true }} 
         style={{ position: 'relative', zIndex: 2 }}
       >
-        <fog attach="fog" args={['#000000', 5, 45]} />
+        <fog attach="fog" args={['#000000', 8, 30]} />
         <ambientLight intensity={1} />
-        <group>
-          <CentralLogo />
-          {EXACT_FRAMER_LAYOUT.map((data, i) => (
-            <StaticFixedImage key={i} data={data} index={i} />
-          ))}
+        
+        <CentralLogo />
+
+        {/* THE FRAMER BOX ARCHITECTURE 
+          Instead of scattering randomly, we create the exact 4 walls from the DOM.
+        */}
+
+        {/* LEFT WALL: rotateY(55deg) */}
+        <group position={[-14, 0, -10]} rotation={[0, 55 * DEG2RAD, 0]}>
+          <TunnelImage pos={[0, 2, 4]} scale={[8, 5]} index={1} />
+          <TunnelImage pos={[0, -4, -2]} scale={[7, 4.5]} index={2} />
+          <TunnelImage pos={[0, 5, -8]} scale={[9, 5.5]} index={3} />
         </group>
+
+        {/* RIGHT WALL: rotateY(-55deg) */}
+        <group position={[14, 0, -10]} rotation={[0, -55 * DEG2RAD, 0]}>
+          <TunnelImage pos={[0, 3, 2]} scale={[9, 5.5]} index={4} />
+          <TunnelImage pos={[0, -3, -4]} scale={[8, 5]} index={5} />
+          <TunnelImage pos={[0, 4, -10]} scale={[7, 4]} index={6} />
+        </group>
+
+        {/* SKY/CEILING: rotateX(-73deg) */}
+        <group position={[0, 10, -10]} rotation={[-73 * DEG2RAD, 0, 0]}>
+          <TunnelImage pos={[-5, 0, 2]} scale={[8, 4.5]} index={7} />
+          <TunnelImage pos={[6, 0, -4]} scale={[9, 5]} index={8} />
+        </group>
+
+        {/* FLOOR: rotateX(73deg) */}
+        <group position={[0, -10, -10]} rotation={[73 * DEG2RAD, 0, 0]}>
+          <TunnelImage pos={[-4, 0, 0]} scale={[9, 5]} index={9} />
+          <TunnelImage pos={[5, 0, -6]} scale={[10, 6]} index={10} />
+        </group>
+
       </Canvas>
     </div>
   );
