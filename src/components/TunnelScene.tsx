@@ -6,11 +6,10 @@ import * as THREE from "three";
 const FOV = 65; 
 
 /* ---------------- CONTROLLED CHAOS LAYOUT ---------------- */
-// Symmetrical base structure, but with asymmetrical offsets in rotation, size, and depth.
 const PANELS = [
   // CLOSE RING (Framing the entrance)
-  { pos: [-4.5, 1.2, -1],    rot: [0.1, Math.PI / 5, 0.05],   scale: [2.5, 1.5], type: 'video' }, // Slightly tilted up
-  { pos: [5.2, -1.5, -1.5],  rot: [-0.1, -Math.PI / 6, 0],    scale: [2.8, 1.7], type: 'video' }, // Slightly larger, pushed back
+  { pos: [-4.5, 1.2, -1], rot: [0.1, Math.PI / 5, 0.05], scale: [2.5, 1.5], type: 'video' },
+  { pos: [5.2, -1.5, -1.5], rot: [-0.1, -Math.PI / 6, 0], scale: [2.8, 1.7], type: 'video' },
 
   // MID RING (The core walls)
   { pos: [-7.5, -2, -5],     rot: [0, Math.PI / 4, 0.1],      scale: [3.2, 1.9], type: 'image' },
@@ -41,14 +40,11 @@ const CameraController = () => {
   const scroll = useScroll();
 
   useFrame((state) => {
-    // 1. The page loads. The Canvas spawned the camera at Z = -1 (super close to the text).
-    // 2. scroll.offset is 0. So targetZ is 5.
-    // 3. The lerp violently but smoothly pulls the camera backwards from -1 to 5. 
-    //    ^^^ THIS IS YOUR FRAMER INTRO REVEAL ANIMATION. ^^^
-    // 4. Once it settles at 5, scrolling pushes it deep into the tunnel to Z = -15.
-    
+    // 1. Spawns zoomed-in extremely tight (Z=-1)
+    // 2. Instantly yanks backwards to Z=5 on load (The Framer Reveal)
+    // 3. Scrolling pushes you deep into the tunnel to Z=-15
     const targetZ = 5 - scroll.offset * 20; 
-    state.camera.position.lerp(new THREE.Vector3(0, 0, targetZ), 0.06); // 0.06 dictates the speed of the zoom-out and scroll easing
+    state.camera.position.lerp(new THREE.Vector3(0, 0, targetZ), 0.06); 
   });
 
   return null;
@@ -91,6 +87,7 @@ const MediaPanel = ({ data, index }: any) => {
 const CentralLogo = () => (
   <group position={[0, 0, -3]}>
     <Text
+      // ABSOLUTELY NO FONT URL. Using the default font + thick stroke hack.
       fontSize={1.1} 
       scale={[1.7, 1, 1]} 
       letterSpacing={-0.08}
@@ -135,7 +132,7 @@ export default function TunnelScene() {
         }} 
       />
 
-      {/* WE SPAWN THE CAMERA AT Z = -1. This is the trick for the intro zoom reveal. */}
+      {/* Spawns camera at Z = -1 for the instant snap-back zoom effect */}
       <Canvas camera={{ position: [0, 0, -1], fov: FOV }} gl={{ antialias: true, alpha: true }} style={{ position: "absolute", inset: 0, zIndex: 2 }}>
         <Suspense fallback={null}>
           <ScrollControls pages={3} damping={0.25}>
