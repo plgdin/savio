@@ -1,11 +1,9 @@
 import React, { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Image, Text, Float } from '@react-three/drei';
+import { Image, Float, Html } from '@react-three/drei';
 
-// Tighter FOV to reduce edge distortion while keeping the depth
 const FOV_WARP = 50; 
 
-// Values have been drastically reduced and pushed outwards to form a wide, clear funnel
 const EXACT_FRAMER_LAYOUT = [
   // LEFT WALL
   { pos: [-9, 1, -2],    rot: [0, Math.PI / 3, 0],   scale: [3.5, 2] },
@@ -46,7 +44,7 @@ const StaticFixedImage = ({ data, index }: StaticFixedImageProps) => {
         scale={[data.scale[0], data.scale[1]]} 
         transparent 
         opacity={0.9} 
-        color="#aaaaaa" // Keeps images slightly dim so the logo pops
+        color="#aaaaaa" 
         toneMapped={false} 
       />
     </Float>
@@ -55,31 +53,37 @@ const StaticFixedImage = ({ data, index }: StaticFixedImageProps) => {
 
 const CentralLogo = () => {
   return (
-    // Pushed back to Z=-6 so it sits neatly in the middle of the tunnel
-    <group position={[0, 0, -6]}> 
-      <Text
-        fontSize={1.2} // Drastically reduced so it never bleeds off the screen
-        scale={[1.4, 1, 1]} // Horizontal stretch for the heavy vector look
-        letterSpacing={-0.05}
-        color="#ffffff"
-        fontWeight={900}
-        anchorX="center"
-        anchorY="middle"
-      >
-        PANORAMA
-      </Text>
-      <Text
-        fontSize={0.18}
-        position={[0, -0.8, 0]}
-        letterSpacing={2} 
-        color="#ffffff"
-        fontWeight={400}
-        anchorX="center"
-        anchorY="middle"
-      >
-        FILMS
-      </Text>
-    </group>
+    // <Html transform center> embeds real DOM elements flawlessly into the 3D scene
+    <Html transform center position={[0, 0, -6]} zIndexRange={[100, 0]}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' }}>
+        <h1 style={{
+          fontFamily: 'Impact, Arial Black, sans-serif',
+          fontSize: '10rem', // Massive size, but rendered cleanly via CSS
+          color: '#ffffff',
+          margin: 0,
+          lineHeight: 1,
+          letterSpacing: '-0.04em',
+          transform: 'scaleX(1.4)', // Horizontal stretch to mimic the wide Framer logo
+          whiteSpace: 'nowrap',
+          textShadow: '0px 0px 20px rgba(0,0,0,0.8)' // Forces it to pop through the fog
+        }}>
+          PANORAMA
+        </h1>
+        <p style={{
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '1.2rem',
+          color: '#ffffff',
+          letterSpacing: '1.5em',
+          margin: 0,
+          marginTop: '-5px',
+          whiteSpace: 'nowrap',
+          transform: 'translateX(0.75em)', // Offset to visually balance the heavy letter spacing
+          textShadow: '0px 0px 10px rgba(0,0,0,0.8)'
+        }}>
+          FILMS
+        </p>
+      </div>
+    </Html>
   );
 };
 
@@ -87,7 +91,7 @@ export default function TunnelScene() {
   return (
     <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', position: 'relative', overflow: 'hidden' }}>
       
-      {/* 1. BACKGROUND VIDEO */}
+      {/* BACKGROUND VIDEO */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
         <video
           autoPlay loop muted playsInline
@@ -97,16 +101,15 @@ export default function TunnelScene() {
         </video>
       </div>
 
-      {/* 2. CSS 2D GRID OVERLAY (Uses your existing CSS class) */}
+      {/* CSS 2D GRID OVERLAY */}
       <div className="framer-grid" style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }} />
       
-      {/* 3. 3D CANVAS */}
+      {/* 3D CANVAS */}
       <Canvas 
         camera={{ position: [0, 0, 5], fov: FOV_WARP }} 
         gl={{ antialias: true, alpha: true }} 
         style={{ position: 'absolute', inset: 0, zIndex: 2 }}
       >
-        {/* Fog tightened to match the new scale geometry */}
         <fog attach="fog" args={['#000000', 3, 22]} />
         <ambientLight intensity={1} />
         
