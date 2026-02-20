@@ -2,34 +2,32 @@ import React, { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Image, Text, Float } from '@react-three/drei';
 
-// A tighter FOV prevents the extreme stretching on the edges
-const FOV_WARP = 65; 
+// 75 gives the exact optical depth seen in the Framer reference
+const FOV_WARP = 75; 
 
-// Placed to mimic the exact scatter pattern in your Framer screenshot
-const SCATTER_DATA = [
-  // Top Left cluster
-  { pos: [-8, 4, 2], rot: [0.2, Math.PI / 6, 0], scale: [7, 4.5] },
-  { pos: [-10, 1, 5], rot: [0.1, Math.PI / 5, 0], scale: [6, 4] },
-  
-  // Bottom Left cluster
-  { pos: [-9, -4, 4], rot: [-0.2, Math.PI / 6, 0], scale: [7, 4.5] },
-  { pos: [-5, -6, 0], rot: [-0.3, Math.PI / 8, 0], scale: [8, 5] },
-  
-  // Top Right cluster
-  { pos: [8, 5, 0], rot: [0.2, -Math.PI / 6, 0], scale: [8, 5] },
-  { pos: [10, 1, 6], rot: [0.1, -Math.PI / 5, 0], scale: [6, 4] },
-  
-  // Bottom Right cluster
-  { pos: [9, -4, 2], rot: [-0.2, -Math.PI / 6, 0], scale: [7, 4.5] },
-  { pos: [6, -7, 0], rot: [-0.3, -Math.PI / 8, 0], scale: [8, 5] },
+// Mapped exactly to the 12 images in the original screenshot
+const EXACT_FRAMER_LAYOUT = [
+  // LEFT WALL
+  { pos: [-12, -1, -12], rot: [0, Math.PI / 3, 0], scale: [8, 5] },
+  { pos: [-18, 3, -25], rot: [0, Math.PI / 4, 0], scale: [10, 6] },
+  { pos: [-10, -5, -6], rot: [0, Math.PI / 2.5, 0], scale: [9, 5] }, 
 
-  // Center-ish Top & Bottom
-  { pos: [0, 6, -5], rot: [0.4, 0, 0], scale: [9, 5] },
-  { pos: [0, -6, -2], rot: [-0.4, 0, 0], scale: [8, 5] },
-  
-  // Far Background for depth
-  { pos: [-4, 2, -10], rot: [0, 0.2, 0], scale: [5, 3] },
-  { pos: [4, -2, -12], rot: [0, -0.2, 0], scale: [6, 3.5] },
+  // RIGHT WALL
+  { pos: [12, 4, -8], rot: [0, -Math.PI / 3, 0], scale: [10, 6] },
+  { pos: [16, -1, -22], rot: [0, -Math.PI / 4, 0], scale: [9, 5] },
+  { pos: [10, -4, -5], rot: [0, -Math.PI / 2.5, 0], scale: [8, 5] }, 
+
+  // TOP WALL
+  { pos: [-5, 7, -10], rot: [Math.PI / 3, 0, 0], scale: [7, 4] },
+  { pos: [4, 8, -15], rot: [Math.PI / 4, 0, 0], scale: [8, 4.5] },
+  { pos: [0, 5, -28], rot: [Math.PI / 6, 0, 0], scale: [6, 3.5] },  
+
+  // BOTTOM WALL
+  { pos: [-3, -7, -8], rot: [-Math.PI / 3, 0, 0], scale: [8, 4.5] },
+  { pos: [4, -9, -20], rot: [-Math.PI / 4, 0, 0], scale: [10, 6] },
+
+  // DEEP CENTER LEFT
+  { pos: [-4, 1, -32], rot: [0, Math.PI / 6, 0], scale: [5, 3] },
 ];
 
 interface StaticFixedImageProps {
@@ -38,20 +36,19 @@ interface StaticFixedImageProps {
 }
 
 const StaticFixedImage = ({ data, index }: StaticFixedImageProps) => {
-  const url = useMemo(() => `https://picsum.photos/800/500?random=${index + 300}`, [index]);
+  const url = useMemo(() => `https://picsum.photos/800/500?random=${index + 500}`, [index]);
   
   return (
-    <Float speed={1.5} rotationIntensity={0.1} floatIntensity={0.2}>
+    <Float speed={1.5} rotationIntensity={0.05} floatIntensity={0.1}>
       <group 
         position={data.pos as [number, number, number]} 
         rotation={data.rot as [number, number, number]}
       >
-        {/* Borders are gone. Opacity is 1 for vibrant colors. */}
         <Image 
           url={url} 
           scale={[data.scale[0], data.scale[1]]} 
           transparent 
-          opacity={1} 
+          opacity={0.9} 
           toneMapped={false}
         />
       </group>
@@ -61,23 +58,25 @@ const StaticFixedImage = ({ data, index }: StaticFixedImageProps) => {
 
 const CentralLogo = () => {
   return (
-    <group position={[0, 0, -8]}> 
+    // Pushed back to Z = -15 so it sits properly inside the tunnel
+    <group position={[0, 0, -15]}> 
       <Text
-        font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
         fontSize={5}
-        // X-scale at 1.4 forces the font to be ultra-wide and blocky
-        scale={[1.4, 1, 1]} 
+        scale={[1.4, 1, 1]} // Stretches it wide like the original
         letterSpacing={-0.08}
-        color="white"
+        color="#ffffff"
         fontWeight={900}
+        // Outline stroke guarantees it looks ultra-thick
+        strokeWidth={0.05}
+        strokeColor="#ffffff" 
       >
         PANORAMA
       </Text>
       <Text
         fontSize={0.6}
-        position={[0, -2.5, 0]}
-        letterSpacing={1.5} 
-        color="white"
+        position={[0, -2.8, 0]}
+        letterSpacing={1.2}
+        color="#ffffff"
         fontWeight={400}
       >
         FILMS
@@ -88,16 +87,21 @@ const CentralLogo = () => {
 
 export default function TunnelScene() {
   return (
-    <div style={{ width: '100vw', height: '100vh', background: 'black' }}>
+    <div style={{ width: '100vw', height: '100vh', background: 'black', position: 'relative' }}>
+      {/* The 2D Grid Background overlay */}
+      <div className="framer-grid" />
+
       <Canvas 
-        camera={{ position: [0, 0, 15], fov: FOV_WARP }} 
+        camera={{ position: [0, 0, 5], fov: FOV_WARP }}
+        gl={{ antialias: true, logarithmicDepthBuffer: true }}
+        style={{ zIndex: 1 }}
       >
-        <color attach="background" args={['#000000']} />
-        <fog attach="fog" args={['#000000', 10, 40]} />
+        <color attach="background" args={['transparent']} /> {/* Transparent to show grid */}
+        <fog attach="fog" args={['#000000', 10, 45]} />
+        <ambientLight intensity={0.6} />
         <group>
-          {/* WireframeTube is completely deleted. It was ruining the render. */}
           <CentralLogo />
-          {SCATTER_DATA.map((data, i) => (
+          {EXACT_FRAMER_LAYOUT.map((data, i) => (
             <StaticFixedImage key={i} data={data} index={i} />
           ))}
         </group>
