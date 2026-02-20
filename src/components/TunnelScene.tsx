@@ -3,7 +3,6 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Text, Float, Image, useVideoTexture, ScrollControls, useScroll } from "@react-three/drei";
 import * as THREE from "three";
 
-/* ---------------- CAMERA ---------------- */
 const FOV = 65; 
 
 /* ---------------- THE BREATHING COLLAGE LAYOUT ---------------- */
@@ -12,21 +11,19 @@ const PANELS = [
   { pos: [-5, 1.5, -1],   rot: [0, Math.PI / 5, 0],  scale: [2.5, 1.5], type: 'video' },
   { pos: [5, -1.5, -1],   rot: [0, -Math.PI / 5, 0], scale: [2.5, 1.5], type: 'video' },
   
-  // MID RING (Left Wall)
+  // MID RING
   { pos: [-7, -2.5, -5],  rot: [0, Math.PI / 5, 0],  scale: [3, 1.8],   type: 'image' },
   { pos: [-8, 3, -9],     rot: [0, Math.PI / 5, 0],  scale: [3.5, 2],   type: 'image' },
   { pos: [-9, -1, -14],   rot: [0, Math.PI / 6, 0],  scale: [4, 2.5],   type: 'video' },
 
-  // MID RING (Right Wall)
   { pos: [7, 2.5, -5],    rot: [0, -Math.PI / 5, 0], scale: [3, 1.8],   type: 'image' },
   { pos: [8, -3, -9],     rot: [0, -Math.PI / 5, 0], scale: [3.5, 2],   type: 'video' },
   { pos: [9, 1, -14],     rot: [0, -Math.PI / 6, 0], scale: [4, 2.5],   type: 'image' },
 
-  // TOP WALL (Ceiling)
+  // TOP & BOTTOM WALLS
   { pos: [-2.5, 4.5, -3], rot: [Math.PI / 5, 0, 0],  scale: [2.8, 1.6], type: 'image' },
   { pos: [3, 6, -8],      rot: [Math.PI / 5, 0, 0],  scale: [3.5, 2],   type: 'video' },
 
-  // BOTTOM WALL (Floor)
   { pos: [2.5, -4.5, -3], rot: [-Math.PI / 5, 0, 0], scale: [2.8, 1.6], type: 'image' },
   { pos: [-3, -6, -8],    rot: [-Math.PI / 5, 0, 0], scale: [3.5, 2],   type: 'video' },
 
@@ -35,33 +32,25 @@ const PANELS = [
   { pos: [3, 2, -22],     rot: [0, -0.1, 0],         scale: [5.5, 3.2], type: 'video' }
 ];
 
-/* ---------------- MEDIA SOURCES ---------------- */
 const VIDEOS = [
   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
 ];
 
-/* ---------------- COMPONENTS ---------------- */
-
-// THE NEW CAMERA CONTROLLER
-// This hijacks the scroll wheel and maps it to the camera's Z depth
+/* ---------------- CAMERA CONTROLLER ---------------- */
 const CameraController = () => {
   const scroll = useScroll();
 
   useFrame((state) => {
-    // scroll.offset goes from 0 (top of page) to 1 (bottom of page)
-    // We start at Z=4. At the bottom of the scroll, we end at Z=-15.
-    // We don't go past -15 so we don't clip through the deep background images.
+    // Flies the camera from Z=4 down into the tunnel to Z=-15 based on scroll
     const targetZ = 4 - scroll.offset * 19; 
-    
-    // Lerp (Linear Interpolation) makes the camera movement buttery smooth 
-    // instead of instantly snapping to the scroll wheel's exact tick.
     state.camera.position.lerp(new THREE.Vector3(0, 0, targetZ), 0.08);
   });
 
   return null;
 };
 
+/* ---------------- COMPONENTS ---------------- */
 const VideoPlane = ({ data, url }: any) => {
   const texture = useVideoTexture(url, { crossOrigin: "Anonymous" });
   return (
@@ -76,14 +65,9 @@ const ImagePlane = ({ data, index }: any) => {
   const url = useMemo(() => `https://picsum.photos/800/500?random=${index + 200}`, [index]);
   return (
     <Image 
-      position={data.pos} 
-      rotation={data.rot}
-      url={url} 
-      scale={data.scale} 
-      transparent 
-      opacity={0.9} 
-      color="#999999" 
-      toneMapped={false} 
+      position={data.pos} rotation={data.rot} url={url} 
+      scale={data.scale} transparent opacity={0.9} 
+      color="#999999" toneMapped={false} 
     />
   );
 };
@@ -99,22 +83,23 @@ const MediaPanel = ({ data, index }: any) => {
   );
 };
 
+/* ---------------- CENTRAL LOGO ---------------- */
 const CentralLogo = () => (
-  // Fixed at Z=-3
   <group position={[0, 0, -3]}>
     <Text
+      // THIS IS THE FIX. Loading the font directly from your public folder.
+      font="/montserrat-black.ttf"
       fontSize={1.1} 
-      scale={[1.7, 1, 1]} 
+      scale={[1.7, 1, 1]} // Stretching X to mimic the vector width
       letterSpacing={-0.08}
       color="#ffffff"
-      strokeWidth={0.04} 
-      strokeColor="#ffffff"
       anchorX="center"
       anchorY="middle"
     >
       PANORAMA
     </Text>
     <Text
+      font="/montserrat-black.ttf"
       fontSize={0.18}
       position={[0, -0.85, 0]}
       letterSpacing={2}
@@ -130,27 +115,17 @@ const CentralLogo = () => (
 /* ---------------- MAIN APP ---------------- */
 export default function TunnelScene() {
   return (
-    <div
-      style={{
-        width: "100vw",
-        height: "100vh",
-        background: "#000",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* 1. BACKGROUND VIDEO */}
+    <div style={{ width: "100vw", height: "100vh", background: "#000", position: "relative", overflow: "hidden" }}>
+      
+      {/* BACKGROUND VIDEO */}
       <video
         autoPlay loop muted playsInline
-        style={{
-          position: "absolute", inset: 0, width: "100%", height: "100%",
-          objectFit: "cover", opacity: 0.25, zIndex: 0, pointerEvents: "none"
-        }}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.25, zIndex: 0, pointerEvents: "none" }}
       >
         <source src="https://framerusercontent.com/assets/b318xptt3gA2YnoeksZKkHw7hiG.mp4" type="video/mp4" />
       </video>
 
-      {/* 2. CSS 2D GRID OVERLAY */}
+      {/* CSS 2D GRID OVERLAY */}
       <div 
         style={{ 
           position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
@@ -159,23 +134,14 @@ export default function TunnelScene() {
         }} 
       />
 
-      {/* 3. 3D TUNNEL CANVAS */}
-      <Canvas
-        camera={{ position: [0, 0, 4], fov: FOV }}
-        gl={{ antialias: true, alpha: true }}
-        style={{ position: "absolute", inset: 0, zIndex: 2 }}
-      >
+      {/* 3D TUNNEL CANVAS */}
+      <Canvas camera={{ position: [0, 0, 4], fov: FOV }} gl={{ antialias: true, alpha: true }} style={{ position: "absolute", inset: 0, zIndex: 2 }}>
         <Suspense fallback={null}>
-          {/* SCROLL CONTROLS WRAPPER: pages=3 makes the scroll area 3 times the height of the viewport */}
           <ScrollControls pages={3} damping={0.25}>
             <CameraController />
-            
-            {/* The fog moves with the camera, so we need to push it slightly further out */}
             <fog attach="fog" args={["#000000", 2, 28]} />
             <ambientLight intensity={1} />
-
             <CentralLogo />
-
             {PANELS.map((panel, i) => (
               <MediaPanel key={i} data={panel} index={i} />
             ))}
