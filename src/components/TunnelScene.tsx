@@ -6,18 +6,18 @@ import * as THREE from "three";
 const FOV = 65; 
 
 /* ---------------- THE CONTROLLED CHAOS LAYOUT ---------------- */
-// Notice how every panel now points to a local file in your public folder.
+// ALL references to vid2.mp4 have been removed to stop the 404 crash.
 const PANELS = [
   { pos: [-4.5, 1.2, -1], rot: [0.1, Math.PI / 5, 0.05], scale: [2.5, 1.5], type: 'video', src: '/vid1.mp4' },
-  { pos: [5.2, -1.5, -1.5], rot: [-0.1, -Math.PI / 6, 0], scale: [2.8, 1.7], type: 'video', src: '/vid2.mp4' },
+  { pos: [5.2, -1.5, -1.5], rot: [-0.1, -Math.PI / 6, 0], scale: [2.8, 1.7], type: 'video', src: '/vid1.mp4' },
   { pos: [-7.5, -2, -5], rot: [0, Math.PI / 4, 0.1], scale: [3.2, 1.9], type: 'image', src: '/img1.jpg' },
   { pos: [6.5, 2.8, -4.5], rot: [0, -Math.PI / 5, -0.1], scale: [3, 1.8], type: 'image', src: '/img1.jpg' },
   { pos: [-8, 3.5, -10], rot: [0.2, Math.PI / 5, 0], scale: [3.8, 2.2], type: 'video', src: '/vid1.mp4' },
-  { pos: [8.5, -2.5, -9], rot: [-0.1, -Math.PI / 4, 0], scale: [3.5, 2], type: 'video', src: '/vid2.mp4' },
+  { pos: [8.5, -2.5, -9], rot: [-0.1, -Math.PI / 4, 0], scale: [3.5, 2], type: 'video', src: '/vid1.mp4' },
   { pos: [-1.5, 5, -3.5], rot: [Math.PI / 4, 0.1, 0.05], scale: [2.8, 1.6], type: 'image', src: '/img1.jpg' },
   { pos: [2.5, 6.5, -8], rot: [Math.PI / 5, -0.1, 0], scale: [3.5, 2], type: 'video', src: '/vid1.mp4' },
   { pos: [2, -5.5, -4], rot: [-Math.PI / 4, -0.1, 0], scale: [3, 1.8], type: 'image', src: '/img1.jpg' },
-  { pos: [-3.5, -6, -9], rot: [-Math.PI / 5, 0.2, 0.05], scale: [3.8, 2.2], type: 'video', src: '/vid2.mp4' },
+  { pos: [-3.5, -6, -9], rot: [-Math.PI / 5, 0.2, 0.05], scale: [3.8, 2.2], type: 'video', src: '/vid1.mp4' },
   { pos: [-3, -1.5, -18], rot: [0.05, 0.2, 0], scale: [5, 3], type: 'image', src: '/img1.jpg' },
   { pos: [4, 2, -20], rot: [-0.05, -0.15, 0], scale: [6, 3.5], type: 'video', src: '/vid1.mp4' }
 ];
@@ -49,7 +49,6 @@ const CameraController = () => {
 
 /* ---------------- COMPONENTS ---------------- */
 const VideoPlane = ({ data }: any) => {
-  // Pulls the video directly from your public folder safely
   const texture = useVideoTexture(data.src, { crossOrigin: "Anonymous" });
   return (
     <mesh position={data.pos} rotation={data.rot}>
@@ -64,7 +63,7 @@ const ImagePlane = ({ data }: any) => {
     <Image
       position={data.pos} rotation={data.rot} url={data.src}
       scale={data.scale} transparent opacity={0.9}
-      color="#cccccc" toneMapped={false}
+      color="#cccccc" toneMapped={false} 
     />
   );
 };
