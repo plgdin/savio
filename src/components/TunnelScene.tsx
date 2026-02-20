@@ -1,80 +1,72 @@
-import React, { Suspense, useMemo } from "react";
-import { Canvas } from "@react-three/fiber";
-import { Text, Float, Image, useVideoTexture } from "@react-three/drei";
+import React, { Suspense, useEffect, useRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Text, Float } from "@react-three/drei";
+import * as THREE from "three";
 
 const FOV = 65; 
 
 /* ---------------- THE BREATHING COLLAGE LAYOUT ---------------- */
 const PANELS = [
-  // CLOSE RING
-  { pos: [-5, 1.5, -1], rot: [0, Math.PI / 5, 0], scale: [2.5, 1.5], type: 'video' },
-  { pos: [5, -1.5, -1], rot: [0, -Math.PI / 5, 0], scale: [2.5, 1.5], type: 'video' },
-
-  // MID RING (Left Wall)
-  { pos: [-7, -2.5, -5], rot: [0, Math.PI / 5, 0], scale: [3, 1.8], type: 'image' },
-  { pos: [-8, 3, -9], rot: [0, Math.PI / 5, 0], scale: [3.5, 2], type: 'image' },
-  { pos: [-9, -1, -14], rot: [0, Math.PI / 6, 0], scale: [4, 2.5], type: 'video' },
-
-  // MID RING (Right Wall)
-  { pos: [7, 2.5, -5], rot: [0, -Math.PI / 5, 0], scale: [3, 1.8], type: 'image' },
-  { pos: [8, -3, -9], rot: [0, -Math.PI / 5, 0], scale: [3.5, 2], type: 'video' },
-  { pos: [9, 1, -14], rot: [0, -Math.PI / 6, 0], scale: [4, 2.5], type: 'image' },
-
-  // TOP WALL (Ceiling)
-  { pos: [-2.5, 4.5, -3], rot: [Math.PI / 5, 0, 0], scale: [2.8, 1.6], type: 'image' },
-  { pos: [3, 6, -8], rot: [Math.PI / 5, 0, 0], scale: [3.5, 2], type: 'video' },
-
-  // BOTTOM WALL (Floor)
-  { pos: [2.5, -4.5, -3], rot: [-Math.PI / 5, 0, 0], scale: [2.8, 1.6], type: 'image' },
-  { pos: [-3, -6, -8], rot: [-Math.PI / 5, 0, 0], scale: [3.5, 2], type: 'video' },
-
-  // DEEP BACKGROUND
-  { pos: [-2, -1, -20], rot: [0, 0.1, 0], scale: [5, 3], type: 'image' },
-  { pos: [3, 2, -22], rot: [0, -0.1, 0], scale: [5.5, 3.2], type: 'video' }
+  { pos: [-5, 1.5, -1],   rot: [0, Math.PI / 5, 0],  scale: [2.5, 1.5], color: "#ff4444" },
+  { pos: [5, -1.5, -1],   rot: [0, -Math.PI / 5, 0], scale: [2.5, 1.5], color: "#4444ff" },
+  { pos: [-7, -2.5, -5],  rot: [0, Math.PI / 5, 0],  scale: [3, 1.8],   color: "#44ff44" },
+  { pos: [-8, 3, -9],     rot: [0, Math.PI / 5, 0],  scale: [3.5, 2],   color: "#ffff44" },
+  { pos: [-9, -1, -14],   rot: [0, Math.PI / 6, 0],  scale: [4, 2.5],   color: "#ff44ff" },
+  { pos: [7, 2.5, -5],    rot: [0, -Math.PI / 5, 0], scale: [3, 1.8],   color: "#44ffff" },
+  { pos: [8, -3, -9],     rot: [0, -Math.PI / 5, 0], scale: [3.5, 2],   color: "#ff8844" },
+  { pos: [9, 1, -14],     rot: [0, -Math.PI / 6, 0], scale: [4, 2.5],   color: "#8844ff" },
+  { pos: [-2.5, 4.5, -3], rot: [Math.PI / 5, 0, 0],  scale: [2.8, 1.6], color: "#44ff88" },
+  { pos: [3, 6, -8],      rot: [Math.PI / 5, 0, 0],  scale: [3.5, 2],   color: "#ff4444" },
+  { pos: [2.5, -4.5, -3], rot: [-Math.PI / 5, 0, 0], scale: [2.8, 1.6], color: "#4444ff" },
+  { pos: [-3, -6, -8],    rot: [-Math.PI / 5, 0, 0], scale: [3.5, 2],   color: "#44ff44" },
+  { pos: [-2, -1, -20],   rot: [0, 0.1, 0],          scale: [5, 3],     color: "#555555" },
+  { pos: [3, 2, -22],     rot: [0, -0.1, 0],         scale: [5.5, 3.2], color: "#777777" }
 ];
 
-const VIDEOS = [
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-];
+/* ---------------- CUSTOM BULLETPROOF CAMERA CONTROLLER ---------------- */
+const CameraController = () => {
+  const targetZ = useRef(4); 
+  // We extract the raw Three.js camera object directly from the Fiber context
+  const { camera } = useThree();
+
+  useEffect(() => {
+    // FORCE the camera deep into the tunnel immediately on mount. 
+    // It will spawn behind the text and violently pull backward.
+    camera.position.set(0, 0, -10);
+
+    const handleWheel = (e: WheelEvent) => {
+      // Scroll down pushes you deeper into the tunnel
+      const scrollDirection = e.deltaY > 0 ? -1 : 1; 
+      targetZ.current = Math.max(-15, Math.min(4, targetZ.current + scrollDirection * 1.5));
+    };
+
+    window.addEventListener("wheel", handleWheel);
+    return () => window.removeEventListener("wheel", handleWheel);
+  }, [camera]);
+
+  useFrame(() => {
+    // Smoothly lerps the camera from its forced -10 start position to the targetZ (4)
+    camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ.current, 0.05);
+  });
+
+  return null;
+};
 
 /* ---------------- COMPONENTS ---------------- */
-const VideoPlane = ({ data, url }: any) => {
-  const texture = useVideoTexture(url, { crossOrigin: "Anonymous" });
-  return (
-    <mesh position={data.pos} rotation={data.rot}>
-      <planeGeometry args={data.scale} />
-      <meshBasicMaterial map={texture} toneMapped={false} color="#999999" />
-    </mesh>
-  );
-};
-
-const ImagePlane = ({ data, index }: any) => {
-  // Changed the random seed slightly to force the browser to clear its image cache
-  const url = useMemo(() => `https://picsum.photos/800/500?random=${index + 600}`, [index]);
-  return (
-    <Image
-      position={data.pos} rotation={data.rot} url={url}
-      scale={data.scale} transparent opacity={0.9}
-      color="#999999" toneMapped={false}
-    />
-  );
-};
-
-const MediaPanel = ({ data, index }: any) => {
+const SafePanel = ({ data }: any) => {
   return (
     <Float speed={2} rotationIntensity={0.05} floatIntensity={0.1}>
-      {data.type === 'video'
-        ? <VideoPlane data={data} url={VIDEOS[index % VIDEOS.length]} />
-        : <ImagePlane data={data} index={index} />
-      }
+      <mesh position={data.pos} rotation={data.rot}>
+        <planeGeometry args={data.scale} />
+        <meshBasicMaterial color={data.color} wireframe={true} />
+        <meshBasicMaterial color="#111111" />
+      </mesh>
     </Float>
   );
 };
 
 /* ---------------- CENTRAL LOGO ---------------- */
 const CentralLogo = () => (
-  // Fixed at Z=-3
   <group position={[0, 0, -3]}>
     <Text
       fontSize={1.1} 
@@ -121,16 +113,17 @@ export default function TunnelScene() {
         }} 
       />
 
-      {/* STATIC CAMERA. No animations, no scroll controls. */}
-      <Canvas camera={{ position: [0, 0, 4], fov: FOV }} gl={{ antialias: true, alpha: true }} style={{ position: "absolute", inset: 0, zIndex: 2 }}>
+      <Canvas gl={{ antialias: true, alpha: true }} style={{ position: "absolute", inset: 0, zIndex: 2 }}>
         <Suspense fallback={null}>
+          <CameraController />
+          
           <fog attach="fog" args={["#000000", 2, 22]} />
           <ambientLight intensity={1} />
 
           <CentralLogo />
 
           {PANELS.map((panel, i) => (
-            <MediaPanel key={i} data={panel} index={i} />
+            <SafePanel key={i} data={panel} index={i} />
           ))}
         </Suspense>
       </Canvas>
