@@ -3,30 +3,63 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text, Float, useVideoTexture } from "@react-three/drei";
 import * as THREE from "three";
 
-const FOV = 65; 
+// --- 3D GRID WALLS ---
+// This creates the "Room" look by placing grid textures on the 4 sides
+const TunnelBox = () => {
+  const gridTexture = useMemo(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0, 0, 128, 128);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(1, 10); // Stretches the grid deep into the tunnel
+    return tex;
+  }, []);
 
-// Strictly positioned along the "walls" of the perspective box to match your screenshot
+  return (
+    <group>
+      {/* Left Wall */}
+      <mesh position={[-6, 0, -10]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[40, 12]} />
+        <meshBasicMaterial map={gridTexture} transparent side={THREE.DoubleSide} />
+      </mesh>
+      {/* Right Wall */}
+      <mesh position={[6, 0, -10]} rotation={[0, -Math.PI / 2, 0]}>
+        <planeGeometry args={[40, 12]} />
+        <meshBasicMaterial map={gridTexture} transparent side={THREE.DoubleSide} />
+      </mesh>
+      {/* Floor */}
+      <mesh position={[0, -5, -10]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[12, 40]} />
+        <meshBasicMaterial map={gridTexture} transparent side={THREE.DoubleSide} />
+      </mesh>
+      {/* Ceiling */}
+      <mesh position={[0, 5, -10]} rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[12, 40]} />
+        <meshBasicMaterial map={gridTexture} transparent side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  );
+};
+
 const PANELS = [
-  // --- LEFT WALL ---
-  { pos: [-5, 1.5, -3],    rot: [0, Math.PI / 2.5, 0],  scale: [4, 2.2] },
-  { pos: [-5, -2, -10],    rot: [0, Math.PI / 2.2, 0],  scale: [4.5, 2.5] },
-  { pos: [-5, 2.5, -18],   rot: [0, Math.PI / 2.1, 0],  scale: [5, 2.8] },
-
-  // --- RIGHT WALL ---
-  { pos: [5, -1.8, -4],    rot: [0, -Math.PI / 2.5, 0], scale: [4, 2.2] },
-  { pos: [5, 2.2, -11],    rot: [0, -Math.PI / 2.2, 0], scale: [4.5, 2.5] },
-  { pos: [5, -2.5, -20],   rot: [0, -Math.PI / 2.1, 0], scale: [5.5, 3] },
-
-  // --- CEILING ---
-  { pos: [-2, 4.5, -6],    rot: [Math.PI / 2.2, 0, 0],  scale: [3.5, 2] },
-  { pos: [2.5, 4.5, -14],  rot: [Math.PI / 2.1, 0, 0],  scale: [4.5, 2.5] },
-
-  // --- FLOOR ---
-  { pos: [2, -4.5, -7],    rot: [-Math.PI / 2.2, 0, 0], scale: [3.5, 2] },
-  { pos: [-2.5, -4.5, -16], rot: [-Math.PI / 2.1, 0, 0], scale: [4.5, 2.5] },
-  
-  // --- VANISHING POINT ---
-  { pos: [0, 0, -25],      rot: [0, 0, 0],              scale: [6, 3.5] }
+  // LEFT WALL
+  { pos: [-5.9, 1.5, -2],    rot: [0, Math.PI / 2, 0],  scale: [4, 2.2] },
+  { pos: [-5.9, -1.8, -12],  rot: [0, Math.PI / 2, 0],  scale: [5, 2.8] },
+  // RIGHT WALL
+  { pos: [5.9, -1.2, -5],   rot: [0, -Math.PI / 2, 0], scale: [4, 2.2] },
+  { pos: [5.9, 2, -18],     rot: [0, -Math.PI / 2, 0], scale: [6, 3.5] },
+  // FLOOR
+  { pos: [-2, -4.9, -8],    rot: [-Math.PI / 2, 0, 0], scale: [4, 2.5] },
+  { pos: [2, -4.9, -15],    rot: [-Math.PI / 2, 0, 0], scale: [5, 3] },
+  // CEILING
+  { pos: [1.5, 4.9, -10],   rot: [Math.PI / 2, 0, 0],  scale: [4, 2.5] }
 ];
 
 const CameraController = () => {
@@ -36,10 +69,9 @@ const CameraController = () => {
   useEffect(() => {
     camera.position.set(0, 0, -10);
     const handleWheel = (e: WheelEvent) => {
-      const scrollDirection = e.deltaY > 0 ? -1 : 1; 
-      targetZ.current = Math.max(-22, Math.min(4, targetZ.current + scrollDirection * 2));
+      targetZ.current = Math.max(-25, Math.min(4, targetZ.current - e.deltaY * 0.01));
     };
-    window.addEventListener("wheel", handleWheel, { passive: true });
+    window.addEventListener("wheel", handleWheel);
     return () => window.removeEventListener("wheel", handleWheel);
   }, [camera]);
 
@@ -50,47 +82,21 @@ const CameraController = () => {
 };
 
 const VideoPlane = ({ data }: any) => {
-  // Ensure vid1.mp4 is in your /public folder
-  const texture = useVideoTexture("/vid1.mp4", { crossOrigin: "Anonymous" });
+  const texture = useVideoTexture("/vid1.mp4");
   return (
     <mesh position={data.pos} rotation={data.rot}>
       <planeGeometry args={data.scale} />
-      <meshBasicMaterial map={texture} toneMapped={false} side={THREE.DoubleSide} />
+      <meshBasicMaterial map={texture} toneMapped={false} />
     </mesh>
-  );
-};
-
-const MediaPanel = ({ data }: any) => {
-  return (
-    <Float speed={1} rotationIntensity={0.05} floatIntensity={0.1}>
-      <VideoPlane data={data} />
-    </Float>
   );
 };
 
 const CentralLogo = () => (
   <group position={[0, 0, -3]}>
-    <Text
-      fontSize={1.2} 
-      scale={[1.6, 1, 1]} 
-      // FONT URL REMOVED TO PREVENT CRASH. Using default system font.
-      letterSpacing={-0.05}
-      color="#ffffff"
-      anchorX="center"
-      anchorY="middle"
-      strokeWidth={0.04}
-      strokeColor="#ffffff"
-    >
+    <Text fontSize={1.2} scale={[1.6, 1, 1]} color="#ffffff" anchorX="center" anchorY="middle">
       PANORAMA
     </Text>
-    <Text
-      fontSize={0.2}
-      position={[0, -0.9, 0]}
-      letterSpacing={0.5}
-      color="#ffffff"
-      anchorX="center"
-      anchorY="middle"
-    >
+    <Text fontSize={0.2} position={[0, -0.9, 0]} color="#ffffff" anchorX="center" anchorY="middle">
       FILMS
     </Text>
   </group>
@@ -98,35 +104,33 @@ const CentralLogo = () => (
 
 export default function TunnelScene() {
   return (
-    <div style={{ width: "100vw", height: "100vh", background: "#000", position: "relative", overflow: "hidden" }}>
-      
-      <video
-        autoPlay loop muted playsInline
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.2, zIndex: 0 }}
-      >
-        <source src="https://framerusercontent.com/assets/b318xptt3gA2YnoeksZKkHw7hiG.mp4" type="video/mp4" />
-      </video>
-
-      <div 
-        style={{ 
-          position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
-          backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)',
-          backgroundSize: '100px 100px',
-          maskImage: 'radial-gradient(circle, black, transparent 80%)'
-        }} 
-      />
-
-      <Canvas gl={{ antialias: true, alpha: true }} style={{ position: "absolute", inset: 0, zIndex: 2 }}>
+    <div style={{ width: "100vw", height: "100vh", background: "#000" }}>
+      <Canvas gl={{ antialias: true }} camera={{ fov: 60 }}>
         <Suspense fallback={null}>
           <CameraController />
-          <fog attach="fog" args={["#000000", 8, 30]} />
-          <ambientLight intensity={1.5} />
+          <TunnelBox />
           <CentralLogo />
           {PANELS.map((panel, i) => (
-            <MediaPanel key={i} data={panel} />
+            <Float key={i} speed={1} rotationIntensity={0.05} floatIntensity={0.05}>
+              <VideoPlane data={panel} />
+            </Float>
           ))}
+          <fog attach="fog" args={["#000", 5, 35]} />
         </Suspense>
       </Canvas>
+      
+      {/* Menu Button UI Overlay */}
+      <div style={{ position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
+        <button style={{ 
+          padding: '10px 30px', borderRadius: '20px', border: 'none', 
+          backgroundColor: 'white', color: 'black', fontWeight: 'bold', 
+          cursor: 'pointer', textTransform: 'uppercase', fontSize: '12px' 
+        }}>
+          Menu
+        </button>
+      </div>
     </div>
   );
 }
+
+import { useMemo } from "react"; // Add this to your imports at the top
