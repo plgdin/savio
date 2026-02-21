@@ -1,77 +1,102 @@
-import React, { Suspense, useEffect, useRef } from "react";
+import React, { Suspense, useEffect, useRef, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text, Float, useVideoTexture } from "@react-three/drei";
 import * as THREE from "three";
 
-// --- 3D GRID WALLS ---
-// This creates the "Room" look by placing grid textures on the 4 sides
-const TunnelBox = () => {
+// --- 1. DYNAMIC CONFIG: FILENAMES FROM YOUR SCREENSHOT ---
+const VIDEO_FILES = [
+  "vid1.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.26 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.27 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.28 PM (1).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.28 PM (2).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.28 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.29 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.30 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.31 PM (1).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.31 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.32 PM (1).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.33 PM (1).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.33 PM (2).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.33 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.34 PM (1).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.34 PM (2).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.34 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
+];
+
+const generatePanels = (files: string[]) => {
+  return files.map((file, i) => {
+    const side = i % 4; 
+    const depth = -5 - (i * 7); // Spaced out for 17 videos
+    let pos: [number, number, number] = [0, 0, 0];
+    
+    if (side === 0) pos = [-7.9, 1.5, depth];    // Left
+    if (side === 1) pos = [7.9, -1.5, depth + 2]; // Right
+    if (side === 2) pos = [0, 6.9, depth + 4];    // Top
+    if (side === 3) pos = [0, -6.9, depth + 1];   // Bottom
+
+    return { url: `/${file}`, pos, scale: [5, 2.8] as [number, number] };
+  });
+};
+
+const PANEL_DATA = generatePanels(VIDEO_FILES);
+
+// --- 3D GRID ROOM SIDES ---
+const TunnelRoom = () => {
   const gridTexture = useMemo(() => {
     const canvas = document.createElement("canvas");
-    canvas.width = 128;
-    canvas.height = 128;
+    canvas.width = 256; canvas.height = 256;
     const ctx = canvas.getContext("2d");
     if (ctx) {
       ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0, 0, 128, 128);
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, 256, 256);
     }
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(1, 10); // Stretches the grid deep into the tunnel
+    tex.repeat.set(1, 45); // Extended grid for more depth
     return tex;
   }, []);
 
   return (
     <group>
-      {/* Left Wall */}
-      <mesh position={[-6, 0, -10]} rotation={[0, Math.PI / 2, 0]}>
-        <planeGeometry args={[40, 12]} />
-        <meshBasicMaterial map={gridTexture} transparent side={THREE.DoubleSide} />
-      </mesh>
-      {/* Right Wall */}
-      <mesh position={[6, 0, -10]} rotation={[0, -Math.PI / 2, 0]}>
-        <planeGeometry args={[40, 12]} />
-        <meshBasicMaterial map={gridTexture} transparent side={THREE.DoubleSide} />
-      </mesh>
-      {/* Floor */}
-      <mesh position={[0, -5, -10]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[12, 40]} />
-        <meshBasicMaterial map={gridTexture} transparent side={THREE.DoubleSide} />
-      </mesh>
-      {/* Ceiling */}
-      <mesh position={[0, 5, -10]} rotation={[Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[12, 40]} />
-        <meshBasicMaterial map={gridTexture} transparent side={THREE.DoubleSide} />
-      </mesh>
+      <mesh position={[-8, 0, -60]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[160, 20]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} side={THREE.DoubleSide} /></mesh>
+      <mesh position={[8, 0, -60]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[160, 20]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} side={THREE.DoubleSide} /></mesh>
+      <mesh position={[0, -7, -60]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[16, 160]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} side={THREE.DoubleSide} /></mesh>
+      <mesh position={[0, 7, -60]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[16, 160]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} side={THREE.DoubleSide} /></mesh>
     </group>
   );
 };
 
-const PANELS = [
-  // LEFT WALL
-  { pos: [-5.9, 1.5, -2],    rot: [0, Math.PI / 2, 0],  scale: [4, 2.2] },
-  { pos: [-5.9, -1.8, -12],  rot: [0, Math.PI / 2, 0],  scale: [5, 2.8] },
-  // RIGHT WALL
-  { pos: [5.9, -1.2, -5],   rot: [0, -Math.PI / 2, 0], scale: [4, 2.2] },
-  { pos: [5.9, 2, -18],     rot: [0, -Math.PI / 2, 0], scale: [6, 3.5] },
-  // FLOOR
-  { pos: [-2, -4.9, -8],    rot: [-Math.PI / 2, 0, 0], scale: [4, 2.5] },
-  { pos: [2, -4.9, -15],    rot: [-Math.PI / 2, 0, 0], scale: [5, 3] },
-  // CEILING
-  { pos: [1.5, 4.9, -10],   rot: [Math.PI / 2, 0, 0],  scale: [4, 2.5] }
-];
+const VideoPlane = ({ url, pos, scale }: any) => {
+  const texture = useVideoTexture(url);
+  const rotation: [number, number, number] = useMemo(() => {
+    if (pos[0] < -5) return [0, Math.PI / 2, 0];
+    if (pos[0] > 5) return [0, -Math.PI / 2, 0];
+    if (pos[1] < -5) return [-Math.PI / 2, 0, 0];
+    return [Math.PI / 2, 0, 0];
+  }, [pos]);
+
+  return (
+    <mesh position={pos} rotation={rotation}>
+      <planeGeometry args={scale} />
+      <meshBasicMaterial map={texture} toneMapped={false} side={THREE.DoubleSide} />
+    </mesh>
+  );
+};
 
 const CameraController = () => {
   const targetZ = useRef(4); 
   const { camera } = useThree();
 
   useEffect(() => {
-    camera.position.set(0, 0, -10);
+    camera.position.set(0, 0, -15);
     const handleWheel = (e: WheelEvent) => {
-      targetZ.current = Math.max(-25, Math.min(4, targetZ.current - e.deltaY * 0.01));
+      // Increased range to -130 to accommodate all 17 panels
+      targetZ.current = Math.max(-130, Math.min(8, targetZ.current - e.deltaY * 0.04));
     };
-    window.addEventListener("wheel", handleWheel);
+    window.addEventListener("wheel", handleWheel, { passive: true });
     return () => window.removeEventListener("wheel", handleWheel);
   }, [camera]);
 
@@ -81,22 +106,28 @@ const CameraController = () => {
   return null;
 };
 
-const VideoPlane = ({ data }: any) => {
-  const texture = useVideoTexture("/vid1.mp4");
-  return (
-    <mesh position={data.pos} rotation={data.rot}>
-      <planeGeometry args={data.scale} />
-      <meshBasicMaterial map={texture} toneMapped={false} />
-    </mesh>
-  );
-};
-
 const CentralLogo = () => (
-  <group position={[0, 0, -3]}>
-    <Text fontSize={1.2} scale={[1.6, 1, 1]} color="#ffffff" anchorX="center" anchorY="middle">
+  <group position={[0, 0, -4]}>
+    <Text
+      fontSize={1.5}
+      scale={[1.4, 1, 1]}
+      color="#ffffff"
+      fontWeight={800} 
+      strokeWidth={0.03}
+      strokeColor="#ffffff"
+      anchorX="center"
+      anchorY="middle"
+    >
       PANORAMA
     </Text>
-    <Text fontSize={0.2} position={[0, -0.9, 0]} color="#ffffff" anchorX="center" anchorY="middle">
+    <Text
+      fontSize={0.25}
+      position={[0, -1.1, 0]}
+      color="#ffffff"
+      letterSpacing={0.5}
+      anchorX="center"
+      anchorY="middle"
+    >
       FILMS
     </Text>
   </group>
@@ -104,33 +135,29 @@ const CentralLogo = () => (
 
 export default function TunnelScene() {
   return (
-    <div style={{ width: "100vw", height: "100vh", background: "#000" }}>
-      <Canvas gl={{ antialias: true }} camera={{ fov: 60 }}>
+    <div style={{ width: "100vw", height: "100vh", background: "#000", position: "relative" }}>
+      <Canvas gl={{ antialias: true }} camera={{ fov: 75 }}>
         <Suspense fallback={null}>
           <CameraController />
-          <TunnelBox />
+          <TunnelRoom />
           <CentralLogo />
-          {PANELS.map((panel, i) => (
-            <Float key={i} speed={1} rotationIntensity={0.05} floatIntensity={0.05}>
-              <VideoPlane data={panel} />
+
+          {PANEL_DATA.map((panel, i) => (
+            <Float key={i} speed={0.8} rotationIntensity={0.02} floatIntensity={0.05}>
+              <VideoPlane {...panel} />
             </Float>
           ))}
-          <fog attach="fog" args={["#000", 5, 35]} />
+          
+          <fog attach="fog" args={["#000", 20, 120]} />
         </Suspense>
       </Canvas>
-      
-      {/* Menu Button UI Overlay */}
+
       <div style={{ position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
         <button style={{ 
-          padding: '10px 30px', borderRadius: '20px', border: 'none', 
-          backgroundColor: 'white', color: 'black', fontWeight: 'bold', 
-          cursor: 'pointer', textTransform: 'uppercase', fontSize: '12px' 
-        }}>
-          Menu
-        </button>
+          padding: '12px 40px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.2)', 
+          backgroundColor: 'white', color: 'black', fontWeight: '900', cursor: 'pointer', fontSize: '11px' 
+        }}>MENU</button>
       </div>
     </div>
   );
 }
-
-import { useMemo } from "react"; // Add this to your imports at the top
