@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text, Float, useVideoTexture } from "@react-three/drei";
 import * as THREE from "three";
 
-// --- 1. DYNAMIC CONFIG: FILENAMES FROM YOUR SCREENSHOT ---
+// --- 1. DYNAMIC CONFIG: 17 VIDEOS FROM YOUR SCREENSHOT ---
 const VIDEO_FILES = [
   "vid1.mp4",
   "WhatsApp Video 2026-02-21 at 3.00.26 PM.mp4",
@@ -25,22 +25,35 @@ const VIDEO_FILES = [
   "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
 ];
 
-const generatePanels = (files: string[]) => {
+// Automatically tiles videos to fill LEFT, RIGHT, TOP, and BOTTOM sequentially
+const generateTunnelPanels = (files: string[]) => {
   return files.map((file, i) => {
-    const side = i % 4; 
-    const depth = -5 - (i * 7); // Spaced out for 17 videos
-    let pos: [number, number, number] = [0, 0, 0];
+    const side = i % 4; // Cycles: 0=Left, 1=Right, 2=Top, 3=Bottom
+    const depthStep = Math.floor(i / 4);
+    const zPos = -5 - (depthStep * 12); // Puts 4 videos at every "ring" of depth
     
-    if (side === 0) pos = [-7.9, 1.5, depth];    // Left
-    if (side === 1) pos = [7.9, -1.5, depth + 2]; // Right
-    if (side === 2) pos = [0, 6.9, depth + 4];    // Top
-    if (side === 3) pos = [0, -6.9, depth + 1];   // Bottom
+    let pos: [number, number, number] = [0, 0, 0];
+    let rot: [number, number, number] = [0, 0, 0];
+    
+    if (side === 0) { // Left Wall
+      pos = [-7.9, 0, zPos];
+      rot = [0, Math.PI / 2, 0];
+    } else if (side === 1) { // Right Wall
+      pos = [7.9, 0, zPos];
+      rot = [0, -Math.PI / 2, 0];
+    } else if (side === 2) { // Ceiling
+      pos = [0, 6.9, zPos];
+      rot = [Math.PI / 2, 0, 0];
+    } else { // Floor
+      pos = [0, -6.9, zPos];
+      rot = [-Math.PI / 2, 0, 0];
+    }
 
-    return { url: `/${file}`, pos, scale: [5, 2.8] as [number, number] };
+    return { url: `/${file}`, pos, rot, scale: [6, 3.5] as [number, number] };
   });
 };
 
-const PANEL_DATA = generatePanels(VIDEO_FILES);
+const TUNNEL_DATA = generateTunnelPanels(VIDEO_FILES);
 
 // --- 3D GRID ROOM SIDES ---
 const TunnelRoom = () => {
@@ -49,37 +62,30 @@ const TunnelRoom = () => {
     canvas.width = 256; canvas.height = 256;
     const ctx = canvas.getContext("2d");
     if (ctx) {
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
       ctx.lineWidth = 2;
       ctx.strokeRect(0, 0, 256, 256);
     }
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(1, 45); // Extended grid for more depth
+    tex.repeat.set(1, 60); 
     return tex;
   }, []);
 
   return (
     <group>
-      <mesh position={[-8, 0, -60]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[160, 20]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} side={THREE.DoubleSide} /></mesh>
-      <mesh position={[8, 0, -60]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[160, 20]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} side={THREE.DoubleSide} /></mesh>
-      <mesh position={[0, -7, -60]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[16, 160]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} side={THREE.DoubleSide} /></mesh>
-      <mesh position={[0, 7, -60]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[16, 160]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} side={THREE.DoubleSide} /></mesh>
+      <mesh position={[-8, 0, -80]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[200, 20]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} side={THREE.DoubleSide} /></mesh>
+      <mesh position={[8, 0, -80]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[200, 20]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} side={THREE.DoubleSide} /></mesh>
+      <mesh position={[0, -7, -80]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[16, 200]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} side={THREE.DoubleSide} /></mesh>
+      <mesh position={[0, 7, -80]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[16, 200]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} side={THREE.DoubleSide} /></mesh>
     </group>
   );
 };
 
-const VideoPlane = ({ url, pos, scale }: any) => {
+const VideoPlane = ({ url, pos, rot, scale }: any) => {
   const texture = useVideoTexture(url);
-  const rotation: [number, number, number] = useMemo(() => {
-    if (pos[0] < -5) return [0, Math.PI / 2, 0];
-    if (pos[0] > 5) return [0, -Math.PI / 2, 0];
-    if (pos[1] < -5) return [-Math.PI / 2, 0, 0];
-    return [Math.PI / 2, 0, 0];
-  }, [pos]);
-
   return (
-    <mesh position={pos} rotation={rotation}>
+    <mesh position={pos} rotation={rot}>
       <planeGeometry args={scale} />
       <meshBasicMaterial map={texture} toneMapped={false} side={THREE.DoubleSide} />
     </mesh>
@@ -93,8 +99,8 @@ const CameraController = () => {
   useEffect(() => {
     camera.position.set(0, 0, -15);
     const handleWheel = (e: WheelEvent) => {
-      // Increased range to -130 to accommodate all 17 panels
-      targetZ.current = Math.max(-130, Math.min(8, targetZ.current - e.deltaY * 0.04));
+      // Extended depth to cover all 17 videos
+      targetZ.current = Math.max(-180, Math.min(8, targetZ.current - e.deltaY * 0.05));
     };
     window.addEventListener("wheel", handleWheel, { passive: true });
     return () => window.removeEventListener("wheel", handleWheel);
@@ -108,26 +114,10 @@ const CameraController = () => {
 
 const CentralLogo = () => (
   <group position={[0, 0, -4]}>
-    <Text
-      fontSize={1.5}
-      scale={[1.4, 1, 1]}
-      color="#ffffff"
-      fontWeight={800} 
-      strokeWidth={0.03}
-      strokeColor="#ffffff"
-      anchorX="center"
-      anchorY="middle"
-    >
+    <Text fontSize={1.5} scale={[1.4, 1, 1]} color="#ffffff" fontWeight={800} strokeWidth={0.03} strokeColor="#ffffff" anchorX="center" anchorY="middle">
       PANORAMA
     </Text>
-    <Text
-      fontSize={0.25}
-      position={[0, -1.1, 0]}
-      color="#ffffff"
-      letterSpacing={0.5}
-      anchorX="center"
-      anchorY="middle"
-    >
+    <Text fontSize={0.25} position={[0, -1.1, 0]} color="#ffffff" letterSpacing={0.5} anchorX="center" anchorY="middle">
       FILMS
     </Text>
   </group>
@@ -136,19 +126,19 @@ const CentralLogo = () => (
 export default function TunnelScene() {
   return (
     <div style={{ width: "100vw", height: "100vh", background: "#000", position: "relative" }}>
-      <Canvas gl={{ antialias: true }} camera={{ fov: 75 }}>
+      <Canvas gl={{ antialias: true }} camera={{ fov: 80 }}>
         <Suspense fallback={null}>
           <CameraController />
           <TunnelRoom />
           <CentralLogo />
 
-          {PANEL_DATA.map((panel, i) => (
-            <Float key={i} speed={0.8} rotationIntensity={0.02} floatIntensity={0.05}>
+          {TUNNEL_DATA.map((panel, i) => (
+            <Float key={i} speed={0.5} rotationIntensity={0.01} floatIntensity={0.02}>
               <VideoPlane {...panel} />
             </Float>
           ))}
           
-          <fog attach="fog" args={["#000", 20, 120]} />
+          <fog attach="fog" args={["#000", 25, 150]} />
         </Suspense>
       </Canvas>
 
