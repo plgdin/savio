@@ -5,28 +5,27 @@ import * as THREE from "three";
 
 const FOV = 65; 
 
-/* ---------------- THE GRID TUNNEL LAYOUT ---------------- */
-// Positioned strictly along the 4 walls of the perspective box
+// Strictly positioned along the "walls" of the perspective box to match your screenshot
 const PANELS = [
-  // --- LEFT WALL (Rotation: Y = PI/2) ---
+  // --- LEFT WALL ---
   { pos: [-5, 1.5, -3],    rot: [0, Math.PI / 2.5, 0],  scale: [4, 2.2] },
   { pos: [-5, -2, -10],    rot: [0, Math.PI / 2.2, 0],  scale: [4.5, 2.5] },
   { pos: [-5, 2.5, -18],   rot: [0, Math.PI / 2.1, 0],  scale: [5, 2.8] },
 
-  // --- RIGHT WALL (Rotation: Y = -PI/2) ---
+  // --- RIGHT WALL ---
   { pos: [5, -1.8, -4],    rot: [0, -Math.PI / 2.5, 0], scale: [4, 2.2] },
   { pos: [5, 2.2, -11],    rot: [0, -Math.PI / 2.2, 0], scale: [4.5, 2.5] },
   { pos: [5, -2.5, -20],   rot: [0, -Math.PI / 2.1, 0], scale: [5.5, 3] },
 
-  // --- CEILING (Rotation: X = PI/2) ---
+  // --- CEILING ---
   { pos: [-2, 4.5, -6],    rot: [Math.PI / 2.2, 0, 0],  scale: [3.5, 2] },
   { pos: [2.5, 4.5, -14],  rot: [Math.PI / 2.1, 0, 0],  scale: [4.5, 2.5] },
 
-  // --- FLOOR (Rotation: X = -PI/2) ---
+  // --- FLOOR ---
   { pos: [2, -4.5, -7],    rot: [-Math.PI / 2.2, 0, 0], scale: [3.5, 2] },
   { pos: [-2.5, -4.5, -16], rot: [-Math.PI / 2.1, 0, 0], scale: [4.5, 2.5] },
   
-  // --- DEEP CENTER (Vanishing point fill) ---
+  // --- VANISHING POINT ---
   { pos: [0, 0, -25],      rot: [0, 0, 0],              scale: [6, 3.5] }
 ];
 
@@ -51,6 +50,7 @@ const CameraController = () => {
 };
 
 const VideoPlane = ({ data }: any) => {
+  // Ensure vid1.mp4 is in your /public folder
   const texture = useVideoTexture("/vid1.mp4", { crossOrigin: "Anonymous" });
   return (
     <mesh position={data.pos} rotation={data.rot}>
@@ -73,11 +73,13 @@ const CentralLogo = () => (
     <Text
       fontSize={1.2} 
       scale={[1.6, 1, 1]} 
-      font="https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCvC73w0aXpsog.woff"
+      // FONT URL REMOVED TO PREVENT CRASH. Using default system font.
       letterSpacing={-0.05}
       color="#ffffff"
       anchorX="center"
       anchorY="middle"
+      strokeWidth={0.04}
+      strokeColor="#ffffff"
     >
       PANORAMA
     </Text>
@@ -105,7 +107,6 @@ export default function TunnelScene() {
         <source src="https://framerusercontent.com/assets/b318xptt3gA2YnoeksZKkHw7hiG.mp4" type="video/mp4" />
       </video>
 
-      {/* The grid lines from the screenshot */}
       <div 
         style={{ 
           position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
