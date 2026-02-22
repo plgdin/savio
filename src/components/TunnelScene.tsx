@@ -26,7 +26,7 @@ const VIDEO_FILES = [
   "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
 ];
 
-// --- "EXACT FRAMER MATH" ALGORITHM ---
+// --- EXACT FRAMER MATH ALGORITHM ---
 const generateScatteredTheater = (files: string[]) => {
   return files.map((file, i) => {
     const side = i % 4; 
@@ -73,20 +73,20 @@ const generateScatteredTheater = (files: string[]) => {
 
 const TUNNEL_DATA = generateScatteredTheater(VIDEO_FILES);
 
-// --- DYNAMIC BACKGROUND & FOG CONTROLLER ---
+// --- FLASHBANG BACKGROUND & FOG CONTROLLER ---
 const ThemeController = () => {
   const { scene } = useThree();
   const bgColor = useMemo(() => new THREE.Color("#ffffff"), []);
 
   useFrame((state) => {
-    // At 0.8 seconds, flip from White to Black
+    // Flashbang flip at 0.8 seconds
     const isDark = state.clock.elapsedTime > 0.8;
     const targetColor = new THREE.Color(isDark ? "#000000" : "#ffffff");
     
     bgColor.lerp(targetColor, 0.1);
     scene.background = bgColor;
     
-    // Create thick fog so deep text is 100% invisible on load
+    // Deep fog hides everything past the logo until you scroll
     if (!scene.fog) scene.fog = new THREE.Fog("#ffffff", 25, 60);
     scene.fog.color.copy(bgColor);
   });
@@ -113,7 +113,6 @@ const TunnelRoom = () => {
   const matRefs = useRef<THREE.MeshBasicMaterial[]>([]);
 
   useFrame((state) => {
-    // Only fade the grid in after the screen turns black
     const isDark = state.clock.elapsedTime > 0.8;
     matRefs.current.forEach(mat => {
       if (mat) mat.opacity = THREE.MathUtils.lerp(mat.opacity, isDark ? 0.15 : 0, 0.1);
@@ -130,7 +129,7 @@ const TunnelRoom = () => {
   );
 };
 
-// --- EXPLODING "FLY-OUT" VIDEO PLANE ---
+// --- EXPLODING VIDEO PLANE ---
 const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index }: any) => {
   const texture = useVideoTexture(url, { crossOrigin: "Anonymous" });
   const meshRef = useRef<THREE.Mesh>(null);
@@ -139,8 +138,8 @@ const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index }: any) => {
   const finalPos = useMemo(() => new THREE.Vector3(...targetPos), [targetPos]);
   const finalScale = useMemo(() => new THREE.Vector3(targetScale[0], targetScale[1], 1), [targetScale]);
   
-  // Starting point: Hidden completely behind the central logo
-  const startPos = useMemo(() => new THREE.Vector3(0, 0, -25), []);
+  // Starting point: Shoved directly behind the logo at z=-20
+  const startPos = useMemo(() => new THREE.Vector3(0, 0, -20), []);
   const startScale = useMemo(() => new THREE.Vector3(0, 0, 0), []);
 
   useEffect(() => {
@@ -159,11 +158,11 @@ const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index }: any) => {
         isInit.current = true;
       }
 
-      // Explosion delay: Wait for screen to turn black (0.8s) + slight stagger
-      const delay = 1.0 + (index * 0.04); 
+      // Explosion trigger: Fires right after the screen goes black
+      const delay = 0.9 + (index * 0.03); 
       if (state.clock.elapsedTime > delay) {
-        meshRef.current.position.lerp(finalPos, 0.08); // Shoot outwards
-        meshRef.current.scale.lerp(finalScale, 0.08);  // Scale up dynamically
+        meshRef.current.position.lerp(finalPos, 0.08); 
+        meshRef.current.scale.lerp(finalScale, 0.08);  
       }
     }
   });
@@ -203,7 +202,6 @@ const TextCheckpoints = () => {
 
   useFrame((state) => {
     const isDark = state.clock.elapsedTime > 0.8;
-    // Crossfade the logos at 0.8 seconds to invert colors with the background
     if (whiteLogoRef.current && blackLogoRef.current) {
       (whiteLogoRef.current.material as THREE.Material).opacity = THREE.MathUtils.lerp((whiteLogoRef.current.material as THREE.Material).opacity, isDark ? 1 : 0, 0.2);
       (blackLogoRef.current.material as THREE.Material).opacity = THREE.MathUtils.lerp((blackLogoRef.current.material as THREE.Material).opacity, isDark ? 0 : 1, 0.2);
@@ -212,10 +210,10 @@ const TextCheckpoints = () => {
 
   return (
     <group>
-      {/* 1. Massive Center Logo (z = -20) */}
-      <group position={[0, 0, -20]} scale={[12, 3.5, 1]}>
-        <Image ref={whiteLogoRef} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#ffffff" />
-        <Image ref={blackLogoRef} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#000000" position={[0,0,0.01]} />
+      {/* 1. Massive Center Logo (Fixed Cropping Issue by applying scale directly to Image) */}
+      <group position={[0, 0, -20]}>
+        <Image ref={whiteLogoRef} scale={[13.5, 3.9]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#ffffff" />
+        <Image ref={blackLogoRef} scale={[13.5, 3.9]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#000000" position={[0,0,0.01]} />
       </group>
 
       {/* 2. Hidden Text 1 (Swallowed by Fog at z=-80 until you scroll) */}
@@ -263,10 +261,10 @@ export default function TunnelScene() {
         <button 
           onClick={() => navigate('/menu')} 
           style={{ 
-            padding: '12px 45px', borderRadius: '88px', border: '1px solid #ddd', 
+            padding: '12px 45px', borderRadius: '88px', border: 'none', 
             backgroundColor: 'white', color: 'black', fontWeight: '900', 
             cursor: 'pointer', fontSize: '12px', letterSpacing: '2px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
         }}>MENU</button>
       </div>
     </div>
