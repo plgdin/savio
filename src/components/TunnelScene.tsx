@@ -1,10 +1,10 @@
 import React, { Suspense, useEffect, useRef, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Float, useVideoTexture, Image } from "@react-three/drei"; // Text removed, no more double FILMS
+import { Float, useVideoTexture, Image } from "@react-three/drei"; 
 import * as THREE from "three";
 import { useNavigate } from "react-router-dom"; 
 
-// --- DYNAMIC CONFIG: 18 VIDEOS ---
+// --- DYNAMIC CONFIG: ALL 18 VIDEOS ---
 const VIDEO_FILES = [
   "vid1.mp4",
   "WhatsApp Video 2026-02-21 at 3.00.26 PM.mp4",
@@ -26,48 +26,47 @@ const VIDEO_FILES = [
   "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
 ];
 
-// --- "THEATER TUNNEL" ALGORITHM ---
+// --- "DEEP THEATER TUNNEL" ALGORITHM ---
 const generateTheaterPanels = (files: string[]) => {
   return files.map((file, i) => {
     const side = i % 4; // 0: Left, 1: Right, 2: Top, 3: Bottom
     
-    // Spread videos continuously down the tunnel, wrapping past the logo
-    const zPos = 2 - (i * 2.5);
+    // Stretch videos DEEP into the background (from z=4 down to z=-70)
+    const zPos = 4 - (i * 4.2);
 
-    // STRICT HOLLOW CENTER: Pushes videos far out to the edges
-    const xDist = 9.5 + (i % 3) * 1.5; // Distances: 9.5, 11, 12.5
-    const yDist = 6.5 + (i % 2) * 1.5; // Distances: 6.5, 8.0
+    // Push panels out to form a strict, hollow rectangular box
+    const X_WALL = 12;
+    const Y_WALL = 7.5;
 
-    // Organic scatter along the walls so they don't form perfect grids
-    const xScatter = Math.sin(i * 2.2) * 6; // Slides Top/Bottom panels horizontally
-    const yScatter = Math.cos(i * 3.1) * 4; // Slides Left/Right panels vertically
+    // Organic scatter along the walls so it doesn't look like a perfect grid
+    const scatter = Math.sin(i * 2.7) * 4;
 
-    // The Framer Angle: ~34 degrees (0.6 rad) inward toward the viewer
-    const angle = 0.6; 
-    const zTilt = Math.sin(i * 1.5) * 0.05; // Tiny natural rotation
+    // The Framer Angle: ~30 degrees (0.5 rad) inward toward the viewer
+    const angle = 0.5; 
+    const zTilt = Math.sin(i * 1.5) * 0.05; 
 
     let pos: [number, number, number] = [0, 0, 0];
     let rot: [number, number, number] = [0, 0, 0];
 
     // Perfect 16:9 Aspect Ratio enforcement
-    const w = 5.5 + (i % 3); 
+    const w = 5.5 + (i % 3) * 0.5; 
     const h = w * 0.5625; 
     const scale: [number, number] = [w, h];
 
     if (side === 0) { // Left Wall
-      pos = [-xDist, yScatter, zPos]; 
+      pos = [-X_WALL, scatter, zPos]; 
       rot = [0, angle, zTilt]; 
     } 
     else if (side === 1) { // Right Wall
-      pos = [xDist, yScatter, zPos]; 
+      pos = [X_WALL, -scatter, zPos]; 
       rot = [0, -angle, -zTilt]; 
     } 
     else if (side === 2) { // Top Ceiling
-      pos = [xScatter, yDist, zPos]; 
+      pos = [scatter, Y_WALL, zPos]; 
       rot = [angle, 0, zTilt]; 
     } 
     else { // Bottom Floor
-      pos = [xScatter, -yDist, zPos]; 
+      pos = [-scatter, -Y_WALL, zPos]; 
       rot = [-angle, 0, -zTilt]; 
     }
 
@@ -90,17 +89,16 @@ const TunnelRoom = () => {
     }
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(1, 100); 
+    tex.repeat.set(1, 150); // Deep grid
     return tex;
   }, []);
 
   return (
     <group>
-      {/* Pushed the walls out wider to accommodate the outer screens */}
-      <mesh position={[-20, 0, -100]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[300, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
-      <mesh position={[20, 0, -100]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[300, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
-      <mesh position={[0, -14, -100]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[40, 300]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
-      <mesh position={[0, 14, -100]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[40, 300]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[-20, 0, -50]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[20, 0, -50]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[0, -15, -50]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[40, 400]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[0, 15, -50]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[40, 400]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
     </group>
   );
 };
@@ -126,14 +124,14 @@ const VideoPlane = ({ url, pos, rot, scale }: any) => {
 };
 
 const CameraController = () => {
-  const targetZ = useRef(5); // Starts slightly pulled back
+  const targetZ = useRef(8); 
   const { camera } = useThree();
 
   useEffect(() => {
-    camera.position.set(0, 0, 5);
+    camera.position.set(0, 0, 8);
     const handleWheel = (e: WheelEvent) => {
-      // Allows scrolling deep past the logo
-      targetZ.current = Math.max(-45, Math.min(8, targetZ.current - e.deltaY * 0.06));
+      // Increased scroll depth to -80 so you can fly past the logo into the back videos
+      targetZ.current = Math.max(-80, Math.min(10, targetZ.current - e.deltaY * 0.08));
     };
     window.addEventListener("wheel", handleWheel, { passive: true });
     return () => window.removeEventListener("wheel", handleWheel);
@@ -145,13 +143,13 @@ const CameraController = () => {
   return null;
 };
 
-// --- THE LOGO AT THE END OF THE TUNNEL ---
+// --- THE LOGO ---
 const CentralLogo = () => (
-  // Sits cleanly in the middle at z = -20
-  <group position={[0, 0, -20]}>
+  // Sits cleanly in the middle at z = -25 (Half the videos are in front, half are behind)
+  <group position={[0, 0, -25]}>
     <Image 
       url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" 
-      scale={[13, 3.8]} // Corrected aspect ratio to stop the squished look
+      scale={[12, 3.5]} 
       transparent
       toneMapped={false} 
     />
@@ -176,7 +174,8 @@ export default function TunnelScene() {
             </Float>
           ))}
           
-          <fog attach="fog" args={["#000", 25, 200]} />
+          {/* Fog pushed back so you can see the deeper videos */}
+          <fog attach="fog" args={["#000", 30, 120]} />
         </Suspense>
       </Canvas>
 
