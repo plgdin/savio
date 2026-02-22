@@ -4,78 +4,15 @@ import { Text, Float, useVideoTexture, Image } from "@react-three/drei";
 import * as THREE from "three";
 import { useNavigate } from "react-router-dom"; 
 
-// --- DYNAMIC CONFIG: 18 VIDEOS ---
+// --- DYNAMIC CONFIG: 16 VIDEOS (4 Per Wall to match Framer) ---
 const VIDEO_FILES = [
-  "vid1.mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.26 PM.mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.27 PM.mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.28 PM (1).mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.28 PM (2).mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.28 PM.mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.29 PM.mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.30 PM.mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.31 PM (1).mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.31 PM.mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.32 PM (1).mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.33 PM (1).mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.33 PM (2).mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.33 PM.mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.34 PM (1).mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.34 PM (2).mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.34 PM.mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
+  "vid1.mp4", "WhatsApp Video 2026-02-21 at 3.00.26 PM.mp4", "WhatsApp Video 2026-02-21 at 3.00.27 PM.mp4", "WhatsApp Video 2026-02-21 at 3.00.28 PM (1).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.28 PM (2).mp4", "WhatsApp Video 2026-02-21 at 3.00.28 PM.mp4", "WhatsApp Video 2026-02-21 at 3.00.29 PM.mp4", "WhatsApp Video 2026-02-21 at 3.00.30 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.31 PM (1).mp4", "WhatsApp Video 2026-02-21 at 3.00.31 PM.mp4", "WhatsApp Video 2026-02-21 at 3.00.32 PM (1).mp4", "WhatsApp Video 2026-02-21 at 3.00.33 PM (1).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.33 PM (2).mp4", "WhatsApp Video 2026-02-21 at 3.00.33 PM.mp4", "WhatsApp Video 2026-02-21 at 3.00.34 PM (1).mp4", "WhatsApp Video 2026-02-21 at 3.00.34 PM (2).mp4"
 ];
 
-// --- STRICT MATH PERSPECTIVE (LOCKED TO GRID ANGLES) ---
-const generateExplodingTheater = (files: string[]) => {
-  return files.map((file, i) => {
-    const side = i % 4; 
-    const depthStep = Math.floor(i / 4); 
-    
-    // Stretch from near the camera deep into the void
-    const zPos = -2 - (depthStep * 12); 
-
-    // Massive quarantine bounds to clear room for the logo
-    const boundX = 15;  
-    const boundY = 9;  
-
-    const scatter = (i % 3) * 6 - 6; 
-
-    // THE EXACT FRAMER ANGLES (Strictly locked, absolutely zero tilt deviation)
-    const rad55 = 55 * (Math.PI / 180); // Left/Right 
-    const rad73 = 73 * (Math.PI / 180); // Top/Bottom 
-
-    let pos: [number, number, number] = [0, 0, 0];
-    let rot: [number, number, number] = [0, 0, 0];
-
-    const w = 5.5 + (i % 3) * 1.5; 
-    const h = w * 0.5625; 
-    const targetScale: [number, number] = [w, h];
-
-    if (side === 0) { // Left Wall
-      pos = [-boundX, scatter, zPos]; 
-      rot = [0, rad55, 0]; 
-    } 
-    else if (side === 1) { // Right Wall
-      pos = [boundX, scatter, zPos]; 
-      rot = [0, -rad55, 0]; 
-    } 
-    else if (side === 2) { // Top Ceiling
-      pos = [scatter * 1.5, boundY, zPos]; 
-      rot = [rad73, 0, 0]; 
-    } 
-    else { // Bottom Floor
-      pos = [scatter * 1.5, -boundY, zPos]; 
-      rot = [-rad73, 0, 0]; 
-    }
-
-    return { url: `/${file}`, pos, rot, targetScale };
-  });
-};
-
-const TUNNEL_DATA = generateExplodingTheater(VIDEO_FILES);
-
-// --- THE EXACT SVG WIREFRAME (Dimmed Opacity HUD) ---
+// --- THE EXACT SVG WIREFRAME HUD ---
 const BackgroundWireframe = ({ isDark }: { isDark: boolean }) => (
   <div style={{
     position: 'absolute', inset: 0, zIndex: 0,
@@ -88,7 +25,7 @@ const BackgroundWireframe = ({ isDark }: { isDark: boolean }) => (
       preserveAspectRatio="xMidYMid slice" 
       style={{ 
         width: '100%', height: '100%', 
-        opacity: isDark ? 0.06 : 0, // Clean, subtle HUD wireframe
+        opacity: isDark ? 0.08 : 0, 
         transition: 'opacity 0.6s ease-in-out' 
       }}
     >
@@ -113,16 +50,15 @@ const FogController = ({ isDark }: { isDark: boolean }) => {
   useFrame(() => {
     const targetColor = new THREE.Color(isDark ? "#000000" : "#ffffff");
     fogColor.lerp(targetColor, 0.1);
-    
-    // Tense fog starting at 30, totally blacking out the screen at 80
-    if (!scene.fog) scene.fog = new THREE.Fog("#ffffff", 30, 80);
+    if (!scene.fog) scene.fog = new THREE.Fog("#ffffff", 25, 75);
     scene.fog.color.copy(fogColor);
   });
   return null;
 };
 
-// --- CENTER EXPLOSION VIDEO PLANE ---
-const VideoPlane = ({ url, targetPos, rot, targetScale, index }: any) => {
+// --- ANIMATED FLY-OUT VIDEO PLANE ---
+// Needs to start at [0,0,0] inside its parent wall, then scale up.
+const VideoPlane = ({ url, targetPos, targetScale, index }: any) => {
   const texture = useVideoTexture(url, { crossOrigin: "Anonymous" });
   const meshRef = useRef<THREE.Mesh>(null);
   const isInit = useRef(false);
@@ -130,8 +66,8 @@ const VideoPlane = ({ url, targetPos, rot, targetScale, index }: any) => {
   const finalPos = useMemo(() => new THREE.Vector3(...targetPos), [targetPos]);
   const finalScale = useMemo(() => new THREE.Vector3(targetScale[0], targetScale[1], 1), [targetScale]);
   
-  // They start literally inside the logo and burst out
-  const startPos = useMemo(() => new THREE.Vector3(0, 0, -20), []);
+  // Starting state for explosion
+  const startPos = useMemo(() => new THREE.Vector3(0, 0, -10), []);
   const startScale = useMemo(() => new THREE.Vector3(0, 0, 0), []);
 
   useEffect(() => {
@@ -150,8 +86,8 @@ const VideoPlane = ({ url, targetPos, rot, targetScale, index }: any) => {
         isInit.current = true;
       }
 
-      // Bang! 0.9s delay so the screen turns black first
-      const delay = 0.9 + (index * 0.03); 
+      // Explosion trigger
+      const delay = 0.9 + (index * 0.04); 
       if (state.clock.elapsedTime > delay) {
         meshRef.current.position.lerp(finalPos, 0.08); 
         meshRef.current.scale.lerp(finalScale, 0.08);  
@@ -160,7 +96,8 @@ const VideoPlane = ({ url, targetPos, rot, targetScale, index }: any) => {
   });
 
   return (
-    <mesh ref={meshRef} rotation={rot}>
+    // Z is 0 so it lays flush on the parent wall
+    <mesh ref={meshRef} position={[0, 0, 0]}>
       <planeGeometry args={[1, 1]} /> 
       <meshBasicMaterial map={texture} toneMapped={false} />
     </mesh>
@@ -175,7 +112,7 @@ const CameraController = () => {
   useEffect(() => {
     camera.position.set(0, 0, 8); 
     const handleWheel = (e: WheelEvent) => {
-      targetZ.current = Math.max(-180, Math.min(10, targetZ.current - e.deltaY * 0.08));
+      targetZ.current = Math.max(-150, Math.min(10, targetZ.current - e.deltaY * 0.08));
     };
     window.addEventListener("wheel", handleWheel, { passive: true });
     return () => window.removeEventListener("wheel", handleWheel);
@@ -187,7 +124,7 @@ const CameraController = () => {
   return null;
 };
 
-// --- LOGO COLOR FLIP & HIDDEN DEEP TEXT ---
+// --- LOGO & DEEP TEXT ---
 const TextCheckpoints = () => {
   const whiteLogoRef = useRef<THREE.Mesh>(null);
   const blackLogoRef = useRef<THREE.Mesh>(null);
@@ -202,13 +139,12 @@ const TextCheckpoints = () => {
 
   return (
     <group>
-      {/* PERFECT Aspect Ratio so "ANORAM" bug is gone forever */}
       <group position={[0, 0, -20]}>
         <Image ref={whiteLogoRef} scale={[24, 7]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#ffffff" />
         <Image ref={blackLogoRef} scale={[24, 7]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#000000" position={[0,0,0.01]} />
       </group>
 
-      <group position={[0, 0, -90]}>
+      <group position={[0, 0, -85]}>
         <Text fontSize={3} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">FEATURED WORK</Text>
         <Text fontSize={0.4} position={[0, -2, 0]} color="#aaaaaa" letterSpacing={0.5} anchorX="center" anchorY="middle">SCROLL DEEPER</Text>
       </group>
@@ -229,25 +165,86 @@ export default function TunnelScene() {
     return () => clearTimeout(timer);
   }, []);
 
+  // --- HARDCODED "FRAMER" WALL LAYOUTS ---
+  // These arrays act exactly like the 4 <div> folders in the Framer HTML.
+  // [X position on wall, Y position on wall, Z depth on wall]
+  const leftWallVids = [
+    { url: VIDEO_FILES[0], pos: [2, 6, -10], scale: [7, 3.9] },
+    { url: VIDEO_FILES[1], pos: [-2, -5, -25], scale: [6, 3.3] },
+    { url: VIDEO_FILES[2], pos: [4, 2, -40], scale: [8, 4.5] },
+    { url: VIDEO_FILES[3], pos: [-3, -2, -55], scale: [5.5, 3.1] }
+  ];
+
+  const rightWallVids = [
+    { url: VIDEO_FILES[4], pos: [-2, 5, -12], scale: [6.5, 3.6] },
+    { url: VIDEO_FILES[5], pos: [3, -4, -28], scale: [5.5, 3.1] },
+    { url: VIDEO_FILES[6], pos: [-4, 3, -45], scale: [7.5, 4.2] },
+    { url: VIDEO_FILES[7], pos: [2, -6, -60], scale: [6, 3.3] }
+  ];
+
+  const topWallVids = [
+    { url: VIDEO_FILES[8], pos: [-5, 2, -15], scale: [7, 3.9] },
+    { url: VIDEO_FILES[9], pos: [6, -1, -30], scale: [6, 3.3] },
+    { url: VIDEO_FILES[10], pos: [-3, 4, -48], scale: [8, 4.5] },
+    { url: VIDEO_FILES[11], pos: [4, -3, -65], scale: [5.5, 3.1] }
+  ];
+
+  const bottomWallVids = [
+    { url: VIDEO_FILES[12], pos: [5, 1, -18], scale: [6.5, 3.6] },
+    { url: VIDEO_FILES[13], pos: [-6, -2, -35], scale: [5.5, 3.1] },
+    { url: VIDEO_FILES[14], pos: [3, 5, -50], scale: [7.5, 4.2] },
+    { url: VIDEO_FILES[15], pos: [-4, -4, -70], scale: [6, 3.3] }
+  ];
+
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       
-      {/* Authentic Framer Wireframe */}
+      {/* 2D HUD Wireframe */}
       <BackgroundWireframe isDark={isDark} />
 
-      {/* Transparent 3D Canvas */}
       <Canvas style={{ position: 'absolute', inset: 0, zIndex: 1 }} gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }} camera={{ fov: 85 }}>
         <Suspense fallback={null}>
           <FogController isDark={isDark} />
           <CameraController />
           <TextCheckpoints />
 
-          {/* Videos stagger-explode outward from the center logo */}
-          {TUNNEL_DATA.map((panel, i) => (
-            <Float key={i} speed={1.2} rotationIntensity={0} floatIntensity={0.05}>
-              <VideoPlane targetPos={panel.pos} rot={panel.rot} targetScale={panel.targetScale} url={panel.url} index={i} />
-            </Float>
-          ))}
+          {/* EXACT FRAMER FOLDERS: 4 Walls rotated to 55deg and 73deg */}
+          {/* LEFT WALL */}
+          <group position={[-12, 0, 0]} rotation={[0, 55 * (Math.PI / 180), 0]}>
+            {leftWallVids.map((vid, i) => (
+              <Float key={`l-${i}`} floatIntensity={0.05} rotationIntensity={0} speed={1.5}>
+                <VideoPlane url={vid.url} targetPos={vid.pos} targetScale={vid.scale} index={i} />
+              </Float>
+            ))}
+          </group>
+
+          {/* RIGHT WALL */}
+          <group position={[12, 0, 0]} rotation={[0, -55 * (Math.PI / 180), 0]}>
+            {rightWallVids.map((vid, i) => (
+              <Float key={`r-${i}`} floatIntensity={0.05} rotationIntensity={0} speed={1.5}>
+                <VideoPlane url={vid.url} targetPos={vid.pos} targetScale={vid.scale} index={i+4} />
+              </Float>
+            ))}
+          </group>
+
+          {/* TOP / SKY WALL */}
+          <group position={[0, 8, 0]} rotation={[73 * (Math.PI / 180), 0, 0]}>
+            {topWallVids.map((vid, i) => (
+              <Float key={`t-${i}`} floatIntensity={0.05} rotationIntensity={0} speed={1.5}>
+                <VideoPlane url={vid.url} targetPos={vid.pos} targetScale={vid.scale} index={i+8} />
+              </Float>
+            ))}
+          </group>
+
+          {/* BOTTOM / FLOOR WALL */}
+          <group position={[0, -8, 0]} rotation={[-73 * (Math.PI / 180), 0, 0]}>
+            {bottomWallVids.map((vid, i) => (
+              <Float key={`b-${i}`} floatIntensity={0.05} rotationIntensity={0} speed={1.5}>
+                <VideoPlane url={vid.url} targetPos={vid.pos} targetScale={vid.scale} index={i+12} />
+              </Float>
+            ))}
+          </group>
+
         </Suspense>
       </Canvas>
 
