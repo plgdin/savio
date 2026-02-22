@@ -2,7 +2,7 @@ import React, { Suspense, useEffect, useRef, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text, Float, useVideoTexture } from "@react-three/drei";
 import * as THREE from "three";
-import { useNavigate } from "react-router-dom"; // <-- ROUTER IMPORT ADDED HERE
+import { useNavigate } from "react-router-dom"; // <-- ROUTER IMPORT
 
 // --- DYNAMIC CONFIG ---
 const VIDEO_FILES = [
@@ -26,27 +26,55 @@ const VIDEO_FILES = [
   "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
 ];
 
-const generateTunnelPanels = (files: string[]) => {
+// --- "CONTROLLED CHAOS" GENERATOR (Matches your Framer Screenshot) ---
+const generatePseudoRandomPanels = (files: string[]) => {
   return files.map((file, i) => {
     const side = i % 4; 
-    const depthStep = Math.floor(i / 4);
-    const zPos = -5 - (depthStep * 12); 
     
+    // Z-Depth: Pushes back steadily, bumps organically
+    const zPos = -8 - (i * 4.5) + (Math.sin(i * 14.3) * 3.5); 
+
+    // X/Y Offsets: Creates the scattered collage look
+    const xOffset = Math.sin(i * 2.7) * 2.5; 
+    const yOffset = Math.cos(i * 3.1) * 2.0;
+
+    // The Framer Angle: ~35 degrees (0.6 rad) inward
+    const baseAngle = 0.6 + (Math.sin(i * 5.5) * 0.15); 
+    const zTilt = Math.sin(i * 7.2) * 0.1; 
+
     let pos: [number, number, number] = [0, 0, 0];
     let rot: [number, number, number] = [0, 0, 0];
-    
-    if (side === 0) { pos = [-7.9, 0, zPos]; rot = [0, Math.PI / 2, 0]; }
-    else if (side === 1) { pos = [7.9, 0, zPos]; rot = [0, -Math.PI / 2, 0]; }
-    else if (side === 2) { pos = [0, 6.9, zPos]; rot = [Math.PI / 2, 0, 0]; }
-    else { pos = [0, -6.9, zPos]; rot = [-Math.PI / 2, 0, 0]; }
 
-    return { url: `/${file}`, pos, rot, scale: [6, 3.5] as [number, number] };
+    // Scale: Varies size but strictly locks 16:9 ratio
+    const width = 5.5 + (Math.sin(i * 8.4) * 1.2);
+    const height = width * 0.56; 
+    const scale: [number, number] = [width, height];
+
+    if (side === 0) { // Left Wall
+      pos = [-8.5 + xOffset, yOffset, zPos]; 
+      rot = [0, baseAngle, zTilt]; 
+    } 
+    else if (side === 1) { // Right Wall
+      pos = [8.5 + xOffset, yOffset, zPos]; 
+      rot = [0, -baseAngle, -zTilt]; 
+    } 
+    else if (side === 2) { // Ceiling
+      pos = [xOffset, 6.5 + yOffset, zPos]; 
+      rot = [baseAngle, 0, zTilt]; 
+    } 
+    else { // Floor
+      pos = [xOffset, -6.5 + yOffset, zPos]; 
+      rot = [-baseAngle, 0, -zTilt]; 
+    }
+
+    return { url: `/${file}`, pos, rot, scale };
   });
 };
 
-const TUNNEL_DATA = generateTunnelPanels(VIDEO_FILES);
+const TUNNEL_DATA = generatePseudoRandomPanels(VIDEO_FILES);
 
-// --- 3D GRID SIDES ---
+// --- 3D GRID BACKGROUND ---
+// Pushed out slightly wider so it acts as a room for the angled videos
 const TunnelRoom = () => {
   const gridTexture = useMemo(() => {
     const canvas = document.createElement("canvas");
@@ -65,10 +93,10 @@ const TunnelRoom = () => {
 
   return (
     <group>
-      <mesh position={[-8, 0, -100]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[250, 20]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} /></mesh>
-      <mesh position={[8, 0, -100]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[250, 20]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} /></mesh>
-      <mesh position={[0, -7, -100]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[16, 250]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} /></mesh>
-      <mesh position={[0, 7, -100]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[16, 250]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.3} /></mesh>
+      <mesh position={[-14, 0, -100]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[250, 30]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.2} /></mesh>
+      <mesh position={[14, 0, -100]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[250, 30]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.2} /></mesh>
+      <mesh position={[0, -10, -100]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[28, 250]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.2} /></mesh>
+      <mesh position={[0, 10, -100]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[28, 250]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.2} /></mesh>
     </group>
   );
 };
@@ -77,7 +105,7 @@ const TunnelRoom = () => {
 const VideoPlane = ({ url, pos, rot, scale }: any) => {
   const texture = useVideoTexture(url, { crossOrigin: "Anonymous" });
   
-  // This physically stops WebGL from duplicating the video into memory for mipmaps
+  // Stops WebGL from crashing your GPU
   useEffect(() => {
     if (texture) {
       texture.generateMipmaps = false;
@@ -113,7 +141,7 @@ const CameraController = () => {
   return null;
 };
 
-// --- CRASH-PROOF LOGO (No Font URL) ---
+// --- CRASH-PROOF LOGO ---
 const CentralLogo = () => (
   <group position={[0, 0, -4]}>
     <Text 
@@ -142,7 +170,7 @@ const CentralLogo = () => (
 );
 
 export default function TunnelScene() {
-  const navigate = useNavigate(); // <-- ROUTER HOOK INITIALIZED HERE
+  const navigate = useNavigate(); // <-- ROUTER HOOK
 
   return (
     <div style={{ width: "100vw", height: "100vh", background: "#000", position: "relative", overflow: "hidden" }}>
@@ -152,20 +180,21 @@ export default function TunnelScene() {
           <TunnelRoom />
           <CentralLogo />
 
+          {/* Render the math-based staggered panels */}
           {TUNNEL_DATA.map((panel, i) => (
-            <Float key={i} speed={0.5} rotationIntensity={0.01} floatIntensity={0.02}>
+            <Float key={i} speed={0.8} rotationIntensity={0.05} floatIntensity={0.1}>
               <VideoPlane {...panel} />
             </Float>
           ))}
           
-          <fog attach="fog" args={["#000", 30, 200]} />
+          <fog attach="fog" args={["#000", 25, 180]} />
         </Suspense>
       </Canvas>
 
-      {/* THE ONLY MENU BUTTON THAT SHOULD EXIST - NOW WIRED UP */}
+      {/* WIRED MENU BUTTON */}
       <div style={{ position: 'absolute', bottom: '30px', left: '50%', transform: 'translateX(-50%)', zIndex: 100 }}>
         <button 
-          onClick={() => navigate('/menu')} // <-- ONCLICK EVENT ADDED HERE
+          onClick={() => navigate('/menu')} 
           style={{ 
             padding: '12px 45px', borderRadius: '88px', border: 'none', 
             backgroundColor: 'white', color: 'black', fontWeight: '900', 
