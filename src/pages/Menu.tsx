@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const menuItems = [
@@ -9,95 +9,161 @@ const menuItems = [
   { label: 'HOME', path: '/' },
 ];
 
+const framerEase = [0.44, 0, 0.56, 1];
+
+const MenuItem = ({ item }: { item: typeof menuItems[0] }) => {
+  const location = useLocation();
+  const isActive = location.pathname === item.path;
+
+  return (
+    <Link 
+      to={item.path} 
+      style={{ textDecoration: 'none', display: 'block', padding: '10px 0' }}
+    >
+      <motion.div
+        initial="initial"
+        whileHover="hover"
+        style={{
+          position: 'relative',
+          height: '88px', // Exact font-size height
+          cursor: 'pointer',
+          perspective: '1200px', // Increased for better 3D depth
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <motion.div
+          variants={{
+            initial: { rotateX: 0, skewX: 0, opacity: 1 },
+            hover: { 
+              rotateX: -90, 
+              skewX: 32,
+              transition: { duration: 0.6, ease: framerEase }
+            },
+          }}
+          style={{
+            transformStyle: 'preserve-3d',
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          {/* FRONT FACE (Normal State) */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              backfaceVisibility: 'hidden',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              transform: 'translateZ(44px)', // Half of height to center the rotation axis
+            }}
+          >
+            <h1
+              style={{
+                fontFamily: '"Panchang", sans-serif',
+                fontSize: '88px',
+                fontWeight: 700,
+                margin: 0,
+                lineHeight: '0.8em',
+                color: isActive ? 'rgb(209, 209, 209)' : '#000000',
+              }}
+            >
+              {item.label}
+            </h1>
+          </motion.div>
+
+          {/* TOP FACE (Revealed on Hover) */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              backfaceVisibility: 'hidden',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              // Positioned 90 degrees on top, pushed back in Z space
+              transform: 'rotateX(90deg) translateZ(44px)', 
+            }}
+          >
+            <h1
+              style={{
+                fontFamily: '"Panchang", sans-serif',
+                fontSize: '88px',
+                fontWeight: 700,
+                margin: 0,
+                lineHeight: '0.8em',
+                color: 'rgb(209, 209, 209)',
+              }}
+            >
+              {item.label}
+            </h1>
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </Link>
+  );
+};
+
 export default function Menu() {
   const navigate = useNavigate();
 
   return (
-    <div style={{ 
-      width: '100vw', 
-      height: '100vh', 
-      backgroundColor: '#ffffff', // Explicit White
-      color: '#000000',
-      display: 'flex', 
-      flexDirection: 'column', 
-      justifyContent: 'center', 
-      alignItems: 'center',
-      position: 'relative',
-      zIndex: 200 // Ensure it sits on top
-    }}>
-      
-      {/* Navigation Links */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-        {menuItems.map((item, i) => (
-          <Link key={item.label} to={item.path} style={{ textDecoration: 'none' }}>
-            {/* The Flip Container */}
-            <motion.div
-              initial="initial"
-              whileHover="hover"
-              style={{ 
-                perspective: '1000px', // Crucial for 3D flip
-                cursor: 'pointer',
-                height: '80px', // Reserve space
-                overflow: 'visible'
-              }}
-            >
-              <motion.div
-                variants={{
-                  initial: { rotateX: 0 },
-                  hover: { rotateX: 360 }
-                }}
-                transition={{ duration: 0.6, ease: "backOut" }}
-                style={{ transformStyle: 'preserve-3d' }}
-              >
-                {/* The Text */}
-                <h1 style={{
-                  fontSize: '4rem',
-                  fontWeight: 900,
-                  textTransform: 'uppercase',
-                  margin: 0,
-                  lineHeight: 1,
-                  fontFamily: 'Inter, sans-serif',
-                  color: item.label === 'HOME' ? '#e0e0e0' : 'black', // Home is light grey
-                }}>
-                  {item.label}
-                </h1>
-                
-                {/* Trick: We can duplicate the text to ensure it looks solid 
-                   while flipping, or just flip the single element.
-                   The hover color change is handled by CSS below or inline style logic.
-                */}
-              </motion.div>
-            </motion.div>
-          </Link>
+    <div
+      style={{
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: '#ffffff',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        zIndex: 1000,
+      }}
+    >
+      {/* 1. TOP RIGHT ICONS */}
+      <div style={{ position: 'absolute', top: '40px', right: '40px', display: 'flex', gap: '15px', zIndex: 10 }}>
+        <div style={{ width: '40px', height: '40px', border: '1px solid #ddd', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', fontFamily: 'Inter', fontSize: '14px' }}>𝕏</div>
+        <div style={{ width: '40px', height: '40px', border: '1px solid #ddd', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', fontFamily: 'Inter', fontSize: '14px' }}>IG</div>
+      </div>
+
+      {/* 2. MENU LIST */}
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0px' }}>
+        {menuItems.map((item) => (
+          <MenuItem key={item.label} item={item} />
         ))}
       </div>
 
-      {/* CLOSE Button (Bottom Center) */}
-      <div style={{ position: 'absolute', bottom: '50px' }}>
-        <button 
+      {/* 3. CLOSE BUTTON */}
+      <div style={{ position: 'absolute', bottom: '56px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
+        <button
           onClick={() => navigate(-1)}
           style={{
             background: 'black',
             color: 'white',
             border: 'none',
-            padding: '12px 32px',
-            borderRadius: '30px',
-            fontSize: '14px',
+            padding: '12px 48px',
+            borderRadius: '40px',
+            fontSize: '24px',
+            fontFamily: '"Bebas Neue", sans-serif',
             fontWeight: 'bold',
-            textTransform: 'uppercase',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            letterSpacing: '1px'
           }}
         >
           CLOSE
         </button>
       </div>
-
-      {/* Top Right Icons (Mockup) */}
-      <div style={{ position: 'absolute', top: '30px', right: '30px', display: 'flex', gap: '5px' }}>
-         <div style={{ width: 30, height: 30, background: '#889', borderRadius: 4 }}></div>
-         <div style={{ width: 30, height: 30, background: '#889', borderRadius: 4 }}></div>
-         <div style={{ width: 30, height: 30, background: '#889', borderRadius: 4 }}></div>
-      </div>
+      
+      {/* 4. BACKGROUND GRID */}
+      <div className="framer-grid" style={{ opacity: 0.05, zIndex: 0 }} />
     </div>
   );
 }
