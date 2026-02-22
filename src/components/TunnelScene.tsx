@@ -26,7 +26,7 @@ const VIDEO_FILES = [
   "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
 ];
 
-// --- EXACT FRAMER MATH ALGORITHM ---
+// --- "EXACT FRAMER MATH" ALGORITHM ---
 const generateScatteredTheater = (files: string[]) => {
   return files.map((file, i) => {
     const side = i % 4; 
@@ -35,8 +35,9 @@ const generateScatteredTheater = (files: string[]) => {
     const scatter1 = Math.sin(i * 13.7) * 7; 
     const scatter2 = Math.cos(i * 19.3) * 3; 
 
-    const boundX = 9.5;  
-    const boundY = 6.0;  
+    // WIDER QUARANTINE ZONE: Pushed out to make room for the massive logo
+    const boundX = 13.0;  
+    const boundY = 7.5;  
 
     // Exact Framer CSS Rotation Angles
     const yAngle = 0.959; // 55 degrees 
@@ -210,10 +211,10 @@ const TextCheckpoints = () => {
 
   return (
     <group>
-      {/* 1. Massive Center Logo (Fixed Cropping Issue by applying scale directly to Image) */}
+      {/* 1. MASSIVE Center Logo (z = -20) */}
       <group position={[0, 0, -20]}>
-        <Image ref={whiteLogoRef} scale={[13.5, 3.9]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#ffffff" />
-        <Image ref={blackLogoRef} scale={[13.5, 3.9]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#000000" position={[0,0,0.01]} />
+        <Image ref={whiteLogoRef} scale={[22, 6.4]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#ffffff" />
+        <Image ref={blackLogoRef} scale={[22, 6.4]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#000000" position={[0,0,0.01]} />
       </group>
 
       {/* 2. Hidden Text 1 (Swallowed by Fog at z=-80 until you scroll) */}
