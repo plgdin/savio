@@ -1,267 +1,328 @@
 import React, { Suspense, useEffect, useRef, useMemo, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Text, Float, useVideoTexture, Image } from "@react-three/drei"; 
+import { Text } from "@react-three/drei";
+import { motion } from "framer-motion";
 import * as THREE from "three";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 
-// --- ALL 20 VIDEOS (Looped dynamically to fill the 20 slots from HTML) ---
+// --- VIDEO FILES ---
 const VIDEO_FILES = [
-  "vid1.mp4", "WhatsApp Video 2026-02-21 at 3.00.26 PM.mp4", "WhatsApp Video 2026-02-21 at 3.00.27 PM.mp4", "WhatsApp Video 2026-02-21 at 3.00.28 PM (1).mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.28 PM (2).mp4", "WhatsApp Video 2026-02-21 at 3.00.28 PM.mp4", "WhatsApp Video 2026-02-21 at 3.00.29 PM.mp4", "WhatsApp Video 2026-02-21 at 3.00.30 PM.mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.31 PM (1).mp4", "WhatsApp Video 2026-02-21 at 3.00.31 PM.mp4", "WhatsApp Video 2026-02-21 at 3.00.32 PM (1).mp4", "WhatsApp Video 2026-02-21 at 3.00.33 PM (1).mp4",
-  "WhatsApp Video 2026-02-21 at 3.00.33 PM (2).mp4", "WhatsApp Video 2026-02-21 at 3.00.33 PM.mp4", "WhatsApp Video 2026-02-21 at 3.00.34 PM (1).mp4", "WhatsApp Video 2026-02-21 at 3.00.34 PM (2).mp4"
+  "vid1.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.26 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.27 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.28 PM (1).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.28 PM (2).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.28 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.29 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.30 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.31 PM (1).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.31 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.32 PM (1).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.33 PM (1).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.33 PM (2).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.33 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.34 PM (1).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.34 PM (2).mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.34 PM.mp4",
+  "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4",
 ];
 
-const getVid = (index: number) => VIDEO_FILES[index % VIDEO_FILES.length];
+const framerEase: [number, number, number, number] = [0.44, 0, 0.56, 1];
 
-// --- EXACT FRAMER PIXEL DATA EXTRACTED FROM YOUR HTML ---
-const rightData = [
-  { url: getVid(0), left: 6.60, top: 0.31, w: 2.42, h: 1.34 },
-  { url: getVid(1), left: 6.28, top: 1.16, w: 1.65, h: 0.91 },
-  { url: getVid(2), left: 3.96, top: 0.65, w: 1.24, h: 0.56 },
-  { url: getVid(3), left: 7.66, bottom: 0.36, w: 1.65, h: 0.91 },
-  { url: getVid(4), left: 5.14, bottom: 1.23, w: 1.65, h: 0.74 }
-];
-
-const leftData = [
-  { url: getVid(5), left: 6.23, top: 1.00, w: 1.65, h: 0.81 },
-  { url: getVid(6), left: 3.30, top: 0.44, w: 1.65, h: 0.91 },
-  { url: getVid(7), left: 3.85, top: 1.23, w: 1.65, h: 0.91 },
-  { url: getVid(8), left: 2.68, bottom: 0.36, w: 1.65, h: 0.91 },
-  { url: getVid(9), left: 1.47, top: 0.85, w: 1.65, h: 0.91 }
-];
-
-const floorData = [
-  { url: getVid(10), left: 0.73, bottom: 1.62, w: 1.49, h: 0.76 },
-  { url: getVid(11), left: 3.42, bottom: 1.46, w: 1.15, h: 1.12 },
-  { url: getVid(12), left: 0.36, bottom: 2.99, w: 1.63, h: 2.82 },
-  { url: getVid(13), left: 1.42, bottom: 2.72, w: 1.16, h: 1.13 },
-  { url: getVid(14), left: 3.00, bottom: 3.57, w: 1.22, h: 1.70 }
-];
-
-const skyData = [
-  { url: getVid(15), left: 3.05, top: 3.98, w: 1.05, h: 1.34 },
-  { url: getVid(16), left: 3.54, top: 1.78, w: 1.07, h: 0.58 },
-  { url: getVid(17), left: 1.36, top: 3.29, w: 1.23, h: 0.90 },
-  { url: getVid(18), left: 2.63, top: 2.22, w: 1.32, h: 0.74 },
-  { url: getVid(19), left: 0.76, top: 2.08, w: 0.95, h: 0.54 }
-];
-
-// --- 2D BACKGROUND HUD ---
+// --- 2D BACKGROUND GRID ---
 const BackgroundWireframe = ({ isDark }: { isDark: boolean }) => (
-  <div style={{
-    position: 'absolute', inset: 0, zIndex: 0,
-    backgroundColor: isDark ? '#000000' : '#ffffff',
-    transition: 'background-color 0.1s', 
-    display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden'
-  }}>
-    <svg viewBox="0 0 1516 832" preserveAspectRatio="xMidYMid slice" style={{ 
-      width: '100%', height: '100%', 
-      opacity: isDark ? 0.2 : 0, 
-      transition: 'opacity 0.6s ease-in-out' 
-    }}>
-      <g stroke="#ffffff" strokeWidth="1" fill="none">
-        <path d="M624.25 338.251h258.5v144.5h-258.5z M586.25 314.25h333.5v192.5h-333.5z M558.25 295.25h389.5v230.5h-389.5z M505.25 261.25h495.5v298.5h-495.5v-298.5Z M427.25 210.25h652.5v400.5h-652.5v-400.5Z M283.25 116.25h940.5v588.5h-940.5v-588.5Z M106.25 11.25h1230.5v808.5H106.25V11.25ZM723.5 482.5 543.778 830.884M723.5 338.672 543.778-9.712M674 483 337 829.496m337-491.324L337-8.324m544.499 490.823 536.111 348.497M881.499 338.673 1417.61-9.824M624.833 482.498 88.72 830.995m536.113-492.321L88.72-9.823M840 482.5l338.11 346.997M840 338.672 1178.11-8.325M793.5 483l179.722 347.884M793.5 338.171 973.222-9.712M758.249 830.999l.001-348.499m-.001-492.327.001 348.499M883 409.939h749.33m-1007.999-1H-125m1008-33.438 744.33-173m-1002.999 172-744.331-173m1003 249.5 747.83 133m-1006.498-134-747.831 133"/>
+  <div
+    style={{
+      position: "absolute",
+      inset: 0,
+      zIndex: 0,
+      backgroundColor: isDark ? "#000000" : "#ffffff",
+      transition: "background-color 0.1s",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      overflow: "hidden",
+    }}
+  >
+    <svg
+      viewBox="0 0 1516 832"
+      preserveAspectRatio="xMidYMid slice"
+      style={{
+        width: "100%",
+        height: "100%",
+        opacity: isDark ? 0.12 : 0,
+        transition: "opacity 0.6s ease-in-out",
+      }}
+    >
+      <g stroke="#ffffff" strokeWidth="1.5" fill="none">
+        <path d="M624.25 338.251h258.5v144.5h-258.5z M586.25 314.25h333.5v192.5h-333.5z M558.25 295.25h389.5v230.5h-389.5z M505.25 261.25h495.5v298.5h-495.5v-298.5Z M427.25 210.25h652.5v400.5h-652.5v-400.5Z M283.25 116.25h940.5v588.5h-940.5v-588.5Z M106.25 11.25h1230.5v808.5H106.25V11.25ZM723.5 482.5 543.778 830.884M723.5 338.672 543.778-9.712M674 483 337 829.496m337-491.324L337-8.324m544.499 490.823 536.111 348.497M881.499 338.673 1417.61-9.824M624.833 482.498 88.72 830.995m536.113-492.321L88.72-9.823M840 482.5l338.11 346.997M840 338.672 1178.11-8.325M793.5 483l179.722 347.884M793.5 338.171 973.222-9.712M758.249 830.999l.001-348.499m-.001-492.327.001 348.499M883 409.939h749.33m-1007.999-1H-125m1008-33.438 744.33-173m-1002.999 172-744.331-173m1003 249.5 747.83 133m-1006.498-134-747.831 133" />
       </g>
     </svg>
   </div>
 );
 
-// --- CSS TO WEBGL COORDINATE CONVERTER ---
-const CSSVideoPlane = ({ url, left, top, bottom, w, h, planeW, planeH, flyDirection, index }: any) => {
-  const texture = useVideoTexture(url, { crossOrigin: "Anonymous" });
-  const meshRef = useRef<THREE.Mesh>(null);
-  const isInit = useRef(false);
-
-  const targetX = -planeW / 2 + left + w / 2;
-  let targetY = 0;
-  if (top !== undefined) targetY = planeH / 2 - top - h / 2;
-  if (bottom !== undefined) targetY = -planeH / 2 + bottom + h / 2;
-
-  const finalPos = useMemo(() => new THREE.Vector3(targetX, targetY, 0), [targetX, targetY]);
-  const finalScale = useMemo(() => new THREE.Vector3(w, h, 1), [w, h]);
-
-  const startPos = useMemo(() => new THREE.Vector3(
-    targetX + flyDirection[0] * 10, 
-    targetY + flyDirection[1] * 10, 
-    0
-  ), [targetX, targetY, flyDirection]);
-  
-  const startScale = useMemo(() => new THREE.Vector3(w * 0.4, h * 0.4, 1), [w, h]);
-
-  useEffect(() => {
-    if (texture) {
-      texture.generateMipmaps = false;
-      texture.minFilter = THREE.LinearFilter;
-      texture.needsUpdate = true;
-    }
-  }, [texture]);
-
-  useFrame((state) => {
-    if (meshRef.current) {
-      if (!isInit.current) {
-        meshRef.current.position.copy(startPos);
-        meshRef.current.scale.copy(startScale);
-        // SAFELY CASTING TO AVOID TYPESCRIPT ERROR
-        (meshRef.current.material as THREE.MeshBasicMaterial).opacity = 0;
-        isInit.current = true;
-      }
-
-      const delay = 0.8 + (index * 0.02); 
-      if (state.clock.elapsedTime > delay) {
-        meshRef.current.position.lerp(finalPos, 0.08); 
-        meshRef.current.scale.lerp(finalScale, 0.08); 
-        // SAFELY CASTING TO AVOID TYPESCRIPT ERROR
-        const material = meshRef.current.material as THREE.MeshBasicMaterial;
-        material.opacity = THREE.MathUtils.lerp(material.opacity, 1, 0.1);
-      }
-    }
-  });
-
-  return (
-    <mesh ref={meshRef}>
-      <planeGeometry args={[1, 1]} /> 
-      <meshBasicMaterial map={texture} toneMapped={false} transparent />
-    </mesh>
-  );
-};
-
-// --- FOG CONTROLLER ---
-const FogController = ({ isDark }: { isDark: boolean }) => {
+// --- THREE.JS THEME + FOG CONTROLLER ---
+const ThemeController = ({ isDark }: { isDark: boolean }) => {
   const { scene } = useThree();
-  const fogColor = useMemo(() => new THREE.Color("#ffffff"), []);
-  
+  const fogColor = useMemo(() => new THREE.Color("#000000"), []);
+
   useFrame(() => {
     const targetColor = new THREE.Color(isDark ? "#000000" : "#ffffff");
-    fogColor.lerp(targetColor, 0.1);
-    if (!scene.fog) scene.fog = new THREE.Fog("#ffffff", 4, 15);
+    fogColor.lerp(targetColor, 0.15);
+    scene.background = null; 
+    if (!scene.fog) scene.fog = new THREE.Fog("#000000", 30, 100);
     scene.fog.color.copy(fogColor);
   });
   return null;
 };
 
-// --- CAMERA CONTROLLER ---
-const CameraController = () => {
-  const targetZ = useRef(5);
+// --- THREE.JS CAMERA CONTROLLER (Tunnel Scroll) ---
+const CameraController = ({ scrollZ }: { scrollZ: number }) => {
   const { camera } = useThree();
 
   useEffect(() => {
-    camera.position.set(0, 0, 5); 
-    const handleWheel = (e: WheelEvent) => {
-      targetZ.current = Math.max(-10, Math.min(5, targetZ.current - e.deltaY * 0.01));
-    };
-    window.addEventListener("wheel", handleWheel, { passive: true });
-    return () => window.removeEventListener("wheel", handleWheel);
+    camera.position.set(0, 0, 0);
   }, [camera]);
 
   useFrame(() => {
-    camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ.current, 0.05);
+    const targetZ = scrollZ * -0.1;
+    camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, 0.08);
   });
   return null;
 };
 
-// --- LOGO & DEEP TEXT ---
-const TextCheckpoints = ({ isDark }: { isDark: boolean }) => {
-  const whiteLogoRef = useRef<THREE.Mesh>(null);
-  const blackLogoRef = useRef<THREE.Mesh>(null);
-
-  useFrame(() => {
-    if (whiteLogoRef.current && blackLogoRef.current) {
-      // SAFELY CASTING TO AVOID TYPESCRIPT ERROR
-      const wMat = whiteLogoRef.current.material as THREE.MeshBasicMaterial;
-      const bMat = blackLogoRef.current.material as THREE.MeshBasicMaterial;
-      
-      wMat.opacity = THREE.MathUtils.lerp(wMat.opacity, isDark ? 1 : 0, 0.2);
-      bMat.opacity = THREE.MathUtils.lerp(bMat.opacity, isDark ? 0 : 1, 0.2);
-    }
-  });
-
+// --- THREE.JS TEXT CHECKPOINTS ---
+const TextCheckpoints = () => {
   return (
     <group>
-      <group position={[0, 0, -2]}>
-        <Image ref={whiteLogoRef} scale={[6, 1.74]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#ffffff" />
-        <Image ref={blackLogoRef} scale={[6, 1.74]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#000000" position={[0,0,0.01]} />
+      <group position={[0, 0, -150]}>
+        <Text
+          fontSize={2.5}
+          color="#ffffff"
+          fontWeight={900}
+          letterSpacing={0.1}
+          anchorX="center"
+          anchorY="middle"
+        >
+          FEATURED WORK
+        </Text>
+        <Text
+          fontSize={0.3}
+          position={[0, -1.8, 0]}
+          color="#aaaaaa"
+          letterSpacing={0.5}
+          anchorX="center"
+          anchorY="middle"
+        >
+          SCROLL DEEPER
+        </Text>
       </group>
 
-      <group position={[0, 0, -10]}>
-        <Text fontSize={1.2} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">FEATURED WORK</Text>
-      </group>
-
-      <group position={[0, 0, -18]}>
-        <Text fontSize={1.5} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">OUR DIRECTORS</Text>
+      <group position={[0, 0, -275]}>
+        <Text
+          fontSize={3.5}
+          color="#ffffff"
+          fontWeight={900}
+          letterSpacing={0.1}
+          anchorX="center"
+          anchorY="middle"
+        >
+          OUR DIRECTORS
+        </Text>
       </group>
     </group>
   );
 };
 
+// --- CSS VIDEO WALL ---
+const AnimatedVideo = ({
+  src,
+  style,
+  initial,
+  delay = 0.8,
+  duration = 1.2,
+  opacity = 1,
+}: any) => (
+  <motion.div
+    style={{ position: "absolute", backgroundColor: "#000", ...style }}
+    initial={{ opacity: opacity === 1 ? 1 : 0.4, scale: 0.4, ...initial }}
+    animate={{ opacity, scale: 1, x: 0, y: 0 }}
+    transition={{ delay, duration, ease: framerEase }}
+  >
+    <video
+      src={src}
+      autoPlay
+      loop
+      muted
+      playsInline
+      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+    />
+  </motion.div>
+);
+
+// FIX: Added isDark: boolean to the props interface here
+const CSSVideoWalls = ({ scale, scrollZ, isDark }: { scale: number; scrollZ: number; isDark: boolean }) => {
+  const getVid = (index: number) =>
+    `/${VIDEO_FILES[index % VIDEO_FILES.length]}`;
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 2,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        pointerEvents: "none",
+        overflow: "hidden",
+        perspective: "1000px" 
+      }}
+    >
+      <div
+        style={{
+          width: "1440px",
+          height: "869px",
+          position: "relative",
+          transform: `scale(${scale}) translateZ(${scrollZ}px)`,
+          transformStyle: "preserve-3d",
+          flexShrink: 0,
+          transition: "transform 0.1s ease-out" 
+        }}
+      >
+        {/* THE GIANT DIMENSIONS BOX */}
+        <div style={{ position: "absolute", inset: "-4195px -8000px -4180px -8007px", overflow: "hidden", transformStyle: "preserve-3d" }}>
+          
+          {/* RIGHT WALL */}
+          <div style={{ position: "absolute", left: "calc(51.78% - 1172px / 2)", top: "calc(50.07% - 366px / 2)", width: "1172px", height: "366px", transform: "perspective(500px) rotateY(-55deg) translateZ(0)", transformStyle: "preserve-3d", overflow: "hidden" }}>
+            <AnimatedVideo src={getVid(0)} initial={{ x: -1000 }} duration={1.0} style={{ left: "660px", top: "31px", width: "242px", height: "134px" }} />
+            <AnimatedVideo src={getVid(1)} initial={{ x: -1000 }} duration={1.2} style={{ left: "628px", top: "116px", width: "165px", height: "91px" }} />
+            <AnimatedVideo src={getVid(2)} initial={{ x: -1000 }} duration={1.1} style={{ left: "396px", top: "65px", width: "124px", height: "56px" }} />
+            <AnimatedVideo src={getVid(3)} initial={{ x: -1000 }} duration={1.3} style={{ left: "766px", bottom: "36px", width: "165px", height: "91px" }} />
+            <AnimatedVideo src={getVid(4)} initial={{ x: -1000 }} duration={1.1} style={{ left: "calc(50.93% - 165px / 2)", bottom: "123px", width: "165px", height: "74px" }} />
+          </div>
+
+          {/* LEFT WALL */}
+          <div style={{ position: "absolute", left: "calc(48.22% - 1172px / 2)", top: "calc(49.91% - 366px / 2)", width: "1172px", height: "366px", transform: "perspective(500px) rotateY(55deg) translateZ(0)", transformStyle: "preserve-3d", overflow: "hidden" }}>
+            <AnimatedVideo src={getVid(5)} initial={{ x: 1000 }} duration={1.0} style={{ left: "623px", top: "100px", width: "165px", height: "81px" }} />
+            <AnimatedVideo src={getVid(6)} initial={{ x: 1000 }} duration={1.4} style={{ left: "330px", top: "44px", width: "165px", height: "91px" }} />
+            <AnimatedVideo src={getVid(7)} initial={{ x: 1000 }} duration={1.3} opacity={0.4} style={{ left: "385px", top: "calc(46.17% - 91px / 2)", width: "165px", height: "91px" }} />
+            <AnimatedVideo src={getVid(8)} initial={{ x: 1000 }} duration={1.1} style={{ left: "268px", bottom: "36px", width: "165px", height: "91px" }} />
+            <AnimatedVideo src={getVid(9)} initial={{ x: 1000 }} duration={1.2} style={{ left: "147px", top: "85px", width: "165px", height: "91px" }} />
+          </div>
+
+          {/* FLOOR */}
+          <div style={{ position: "absolute", left: "calc(50.01% - 545px / 2)", top: "calc(51.56% - 1000px / 2)", width: "545px", height: "1000px", transform: "perspective(500px) rotateX(73deg) translateZ(0)", transformStyle: "preserve-3d", overflow: "hidden" }}>
+            <AnimatedVideo src={getVid(10)} initial={{ y: -1000 }} duration={1.4} style={{ left: "73px", bottom: "162px", width: "149px", height: "76px" }} />
+            <AnimatedVideo src={getVid(11)} initial={{ y: -1000 }} duration={1.0} style={{ left: "342px", bottom: "146px", width: "115px", height: "112px" }} />
+            <AnimatedVideo src={getVid(12)} initial={{ y: -1000 }} duration={1.3} style={{ left: "36px", bottom: "299px", width: "163px", height: "282px" }} />
+            <AnimatedVideo src={getVid(13)} initial={{ y: -1000 }} duration={1.2} style={{ left: "142px", bottom: "272px", width: "116px", height: "113px" }} />
+            <AnimatedVideo src={getVid(14)} initial={{ y: -1000 }} duration={1.4} style={{ left: "300px", bottom: "357px", width: "122px", height: "170px" }} />
+          </div>
+
+          {/* SKY */}
+          <div style={{ position: "absolute", left: "calc(50% - 545px / 2)", top: "calc(48.65% - 1000px / 2)", width: "545px", height: "1000px", transform: "perspective(500px) rotateX(-73deg) translateZ(0)", transformStyle: "preserve-3d", overflow: "hidden" }}>
+            <AnimatedVideo src={getVid(15)} initial={{ y: 1000 }} duration={1.4} style={{ left: "305px", top: "calc(46.5% - 134px / 2)", width: "105px", height: "134px" }} />
+            <AnimatedVideo src={getVid(16)} initial={{ y: 1000 }} duration={1.1} style={{ left: "354px", top: "178px", width: "107px", height: "58px" }} />
+            <AnimatedVideo src={getVid(17)} initial={{ y: 1000 }} duration={1.2} style={{ left: "136px", top: "329px", width: "123px", height: "90px" }} />
+            <AnimatedVideo src={getVid(0)} initial={{ y: 1000 }} duration={1.1} style={{ left: "263px", top: "222px", width: "132px", height: "74px" }} />
+            <AnimatedVideo src={getVid(1)} initial={{ y: 1000 }} duration={1.0} style={{ left: "76px", top: "208px", width: "95px", height: "54px" }} />
+          </div>
+        </div>
+
+        {/* LOGO */}
+        <div style={{ position: "absolute", left: "calc(50% - 427px / 2)", top: "calc(50% - 175px / 2)", width: "427px", height: "175px", zIndex: 10, display: "flex", justifyContent: "center", alignItems: "center", pointerEvents: "none" }}>
+          <img src="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" alt="Logo" style={{ position: 'absolute', width: '100%', height: '100%', filter: 'invert(1)', opacity: isDark ? 0 : 1, transition: 'opacity 0.1s ease' }} />
+          <img src="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" alt="Logo" style={{ position: 'absolute', width: '100%', height: '100%', opacity: isDark ? 1 : 0, transition: 'opacity 0.1s ease' }} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- MAIN SCENE ---
 export default function TunnelScene() {
   const navigate = useNavigate();
   const [isDark, setIsDark] = useState(false);
+  const [scale, setScale] = useState(1);
+  const [scrollZ, setScrollZ] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsDark(true), 800);
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    const handleResize = () => {
+      const scaleX = window.innerWidth / 1440;
+      const scaleY = window.innerHeight / 869;
+      setScale(Math.max(scaleX, scaleY));
+    };
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      setScrollZ(prev => Math.max(0, Math.min(prev + e.deltaY * 3, 2600)));
+    };
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    return () => window.removeEventListener("wheel", handleWheel);
+  }, []);
+
   return (
-    <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden", backgroundColor: isDark ? '#000' : '#fff' }}>
-      
+    <div
+      style={{
+        width: "100vw",
+        height: "100vh",
+        position: "relative",
+        overflow: "hidden",
+        backgroundColor: isDark ? "#000" : "#fff",
+      }}
+    >
       <BackgroundWireframe isDark={isDark} />
 
-      <Canvas style={{ position: 'absolute', inset: 0, zIndex: 1 }} gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }} camera={{ fov: 75 }}>
+      <Canvas
+        style={{ position: "absolute", inset: 0, zIndex: 1 }}
+        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+        camera={{ fov: 75 }}
+      >
         <Suspense fallback={null}>
-          <FogController isDark={isDark} />
-          <CameraController />
-          <TextCheckpoints isDark={isDark} />
-
-          {/* RIGHT WALL */}
-          <group rotation={[0, -55 * (Math.PI / 180), 0]}>
-            {rightData.map((vid, i) => (
-              <Float key={`r-${i}`} floatIntensity={0.05} rotationIntensity={0} speed={1.5}>
-                <CSSVideoPlane {...vid} planeW={11.72} planeH={3.66} flyDirection={[-1, 0]} index={i} />
-              </Float>
-            ))}
-          </group>
-
-          {/* LEFT WALL */}
-          <group rotation={[0, 55 * (Math.PI / 180), 0]}>
-            {leftData.map((vid, i) => (
-              <Float key={`l-${i}`} floatIntensity={0.05} rotationIntensity={0} speed={1.5}>
-                <CSSVideoPlane {...vid} planeW={11.72} planeH={3.66} flyDirection={[1, 0]} index={i+5} />
-              </Float>
-            ))}
-          </group>
-
-          {/* FLOOR WALL */}
-          <group rotation={[73 * (Math.PI / 180), 0, 0]}>
-            {floorData.map((vid, i) => (
-              <Float key={`f-${i}`} floatIntensity={0.05} rotationIntensity={0} speed={1.5}>
-                <CSSVideoPlane {...vid} planeW={5.45} planeH={10.0} flyDirection={[0, -1]} index={i+10} />
-              </Float>
-            ))}
-          </group>
-
-          {/* SKY WALL */}
-          <group rotation={[-73 * (Math.PI / 180), 0, 0]}>
-            {skyData.map((vid, i) => (
-              <Float key={`s-${i}`} floatIntensity={0.05} rotationIntensity={0} speed={1.5}>
-                <CSSVideoPlane {...vid} planeW={5.45} planeH={10.0} flyDirection={[0, 1]} index={i+15} />
-              </Float>
-            ))}
-          </group>
-
+          <ThemeController isDark={isDark} />
+          <CameraController scrollZ={scrollZ} />
+          <TextCheckpoints />
         </Suspense>
       </Canvas>
 
-      <div style={{ position: 'absolute', bottom: '30px', left: '50%', transform: 'translateX(-50%)', zIndex: 100 }}>
-        <button 
-          onClick={() => navigate('/menu')} 
-          style={{ 
-            padding: '12px 45px', borderRadius: '88px', border: 'none', 
-            backgroundColor: 'white', color: 'black', fontWeight: '900', 
-            cursor: 'pointer', fontSize: '12px', letterSpacing: '2px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
-        }}>MENU</button>
+      <CSSVideoWalls scale={scale} scrollZ={scrollZ} isDark={isDark} />
+
+      <div
+        style={{
+          position: "absolute",
+          bottom: "30px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 100,
+        }}
+      >
+        <button
+          onClick={() => navigate("/menu")}
+          style={{
+            padding: "12px 45px",
+            borderRadius: "88px",
+            border: "none",
+            backgroundColor: "white",
+            color: "black",
+            fontWeight: "900",
+            cursor: "pointer",
+            fontSize: "12px",
+            letterSpacing: "2px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+          }}
+        >
+          MENU
+        </button>
       </div>
     </div>
   );
