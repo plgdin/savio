@@ -1,7 +1,7 @@
 import React, { Suspense, useEffect, useRef, useMemo, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 import * as THREE from "three";
 import { useNavigate } from "react-router-dom";
 
@@ -28,6 +28,52 @@ const VIDEO_FILES = [
 ];
 
 const framerEase: [number, number, number, number] = [0.44, 0, 0.56, 1];
+
+// --- CUSTOM CURSOR COMPONENT ---
+// Matches the exact white dot from your screenshots with premium Framer physics
+const CustomCursor = () => {
+  const cursorX = useMotionValue(-100);
+  const cursorY = useMotionValue(-100);
+  
+  // Tightened physics: Less floaty, more responsive, snappier tracking
+  const springConfig = { damping: 20, stiffness: 700, mass: 0.1 };
+  const cursorXSpring = useSpring(cursorX, springConfig);
+  const cursorYSpring = useSpring(cursorY, springConfig);
+
+  useEffect(() => {
+    document.body.style.cursor = 'none'; // Hide native cursor globally
+    const moveCursor = (e: MouseEvent) => {
+      cursorX.set(e.clientX);
+      cursorY.set(e.clientY);
+    };
+    window.addEventListener("mousemove", moveCursor);
+    return () => {
+      document.body.style.cursor = 'auto'; // Restore on unmount
+      window.removeEventListener("mousemove", moveCursor);
+    };
+  }, [cursorX, cursorY]);
+
+  return (
+    <motion.div
+      style={{
+        position: "fixed",
+        left: 0,
+        top: 0,
+        x: cursorXSpring,
+        y: cursorYSpring,
+        translateX: "-50%",
+        translateY: "-50%",
+        width: "14px", // Perfect small dot size from your screenshot
+        height: "14px",
+        backgroundColor: "#ffffff",
+        borderRadius: "50%",
+        pointerEvents: "none",
+        zIndex: 99999, // Guarantees it is always on top of EVERYTHING
+        mixBlendMode: "difference", // Ensures it stays visible even if hovering over white text/videos
+      }}
+    />
+  );
+};
 
 // --- 2D BACKGROUND GRID ---
 const BackgroundWireframe = ({ isDark }: { isDark: boolean }) => (
@@ -69,14 +115,14 @@ const ThemeController = ({ isDark }: { isDark: boolean }) => {
   useFrame(() => {
     const targetColor = new THREE.Color(isDark ? "#000000" : "#ffffff");
     fogColor.lerp(targetColor, 0.15);
-    scene.background = null; 
+    scene.background = null;
     if (!scene.fog) scene.fog = new THREE.Fog("#000000", 30, 100);
     scene.fog.color.copy(fogColor);
   });
   return null;
 };
 
-// --- THREE.JS CAMERA CONTROLLER (Tunnel Scroll) ---
+// --- THREE.JS CAMERA CONTROLLER ---
 const CameraController = ({ scrollZ }: { scrollZ: number }) => {
   const { camera } = useThree();
 
@@ -160,7 +206,6 @@ const AnimatedVideo = ({
   </motion.div>
 );
 
-// FIX: Added isDark: boolean to the props interface here
 const CSSVideoWalls = ({ scale, scrollZ, isDark }: { scale: number; scrollZ: number; isDark: boolean }) => {
   const getVid = (index: number) =>
     `/${VIDEO_FILES[index % VIDEO_FILES.length]}`;
@@ -190,10 +235,8 @@ const CSSVideoWalls = ({ scale, scrollZ, isDark }: { scale: number; scrollZ: num
           transition: "transform 0.1s ease-out" 
         }}
       >
-        {/* THE GIANT DIMENSIONS BOX */}
         <div style={{ position: "absolute", inset: "-4195px -8000px -4180px -8007px", overflow: "hidden", transformStyle: "preserve-3d" }}>
           
-          {/* RIGHT WALL */}
           <div style={{ position: "absolute", left: "calc(51.78% - 1172px / 2)", top: "calc(50.07% - 366px / 2)", width: "1172px", height: "366px", transform: "perspective(500px) rotateY(-55deg) translateZ(0)", transformStyle: "preserve-3d", overflow: "hidden" }}>
             <AnimatedVideo src={getVid(0)} initial={{ x: -1000 }} duration={1.0} style={{ left: "660px", top: "31px", width: "242px", height: "134px" }} />
             <AnimatedVideo src={getVid(1)} initial={{ x: -1000 }} duration={1.2} style={{ left: "628px", top: "116px", width: "165px", height: "91px" }} />
@@ -202,7 +245,6 @@ const CSSVideoWalls = ({ scale, scrollZ, isDark }: { scale: number; scrollZ: num
             <AnimatedVideo src={getVid(4)} initial={{ x: -1000 }} duration={1.1} style={{ left: "calc(50.93% - 165px / 2)", bottom: "123px", width: "165px", height: "74px" }} />
           </div>
 
-          {/* LEFT WALL */}
           <div style={{ position: "absolute", left: "calc(48.22% - 1172px / 2)", top: "calc(49.91% - 366px / 2)", width: "1172px", height: "366px", transform: "perspective(500px) rotateY(55deg) translateZ(0)", transformStyle: "preserve-3d", overflow: "hidden" }}>
             <AnimatedVideo src={getVid(5)} initial={{ x: 1000 }} duration={1.0} style={{ left: "623px", top: "100px", width: "165px", height: "81px" }} />
             <AnimatedVideo src={getVid(6)} initial={{ x: 1000 }} duration={1.4} style={{ left: "330px", top: "44px", width: "165px", height: "91px" }} />
@@ -211,7 +253,6 @@ const CSSVideoWalls = ({ scale, scrollZ, isDark }: { scale: number; scrollZ: num
             <AnimatedVideo src={getVid(9)} initial={{ x: 1000 }} duration={1.2} style={{ left: "147px", top: "85px", width: "165px", height: "91px" }} />
           </div>
 
-          {/* FLOOR */}
           <div style={{ position: "absolute", left: "calc(50.01% - 545px / 2)", top: "calc(51.56% - 1000px / 2)", width: "545px", height: "1000px", transform: "perspective(500px) rotateX(73deg) translateZ(0)", transformStyle: "preserve-3d", overflow: "hidden" }}>
             <AnimatedVideo src={getVid(10)} initial={{ y: -1000 }} duration={1.4} style={{ left: "73px", bottom: "162px", width: "149px", height: "76px" }} />
             <AnimatedVideo src={getVid(11)} initial={{ y: -1000 }} duration={1.0} style={{ left: "342px", bottom: "146px", width: "115px", height: "112px" }} />
@@ -220,7 +261,6 @@ const CSSVideoWalls = ({ scale, scrollZ, isDark }: { scale: number; scrollZ: num
             <AnimatedVideo src={getVid(14)} initial={{ y: -1000 }} duration={1.4} style={{ left: "300px", bottom: "357px", width: "122px", height: "170px" }} />
           </div>
 
-          {/* SKY */}
           <div style={{ position: "absolute", left: "calc(50% - 545px / 2)", top: "calc(48.65% - 1000px / 2)", width: "545px", height: "1000px", transform: "perspective(500px) rotateX(-73deg) translateZ(0)", transformStyle: "preserve-3d", overflow: "hidden" }}>
             <AnimatedVideo src={getVid(15)} initial={{ y: 1000 }} duration={1.4} style={{ left: "305px", top: "calc(46.5% - 134px / 2)", width: "105px", height: "134px" }} />
             <AnimatedVideo src={getVid(16)} initial={{ y: 1000 }} duration={1.1} style={{ left: "354px", top: "178px", width: "107px", height: "58px" }} />
@@ -230,7 +270,6 @@ const CSSVideoWalls = ({ scale, scrollZ, isDark }: { scale: number; scrollZ: num
           </div>
         </div>
 
-        {/* LOGO */}
         <div style={{ position: "absolute", left: "calc(50% - 427px / 2)", top: "calc(50% - 175px / 2)", width: "427px", height: "175px", zIndex: 10, display: "flex", justifyContent: "center", alignItems: "center", pointerEvents: "none" }}>
           <img src="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" alt="Logo" style={{ position: 'absolute', width: '100%', height: '100%', filter: 'invert(1)', opacity: isDark ? 0 : 1, transition: 'opacity 0.1s ease' }} />
           <img src="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" alt="Logo" style={{ position: 'absolute', width: '100%', height: '100%', opacity: isDark ? 1 : 0, transition: 'opacity 0.1s ease' }} />
@@ -281,6 +320,8 @@ export default function TunnelScene() {
         backgroundColor: isDark ? "#000" : "#fff",
       }}
     >
+      <CustomCursor />
+      
       <BackgroundWireframe isDark={isDark} />
 
       <Canvas
@@ -297,6 +338,13 @@ export default function TunnelScene() {
 
       <CSSVideoWalls scale={scale} scrollZ={scrollZ} isDark={isDark} />
 
+      {/* Fog Overlay */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 5,
+        background: 'radial-gradient(circle at center, transparent 20%, #000 95%)',
+        opacity: isDark ? 0.9 : 0, transition: 'opacity 1s ease'
+      }} />
+
       <div
         style={{
           position: "absolute",
@@ -307,7 +355,10 @@ export default function TunnelScene() {
         }}
       >
         <button
-          onClick={() => navigate("/menu")}
+          onClick={() => {
+            document.body.style.cursor = 'auto'; // Reset cursor before leaving
+            navigate("/menu");
+          }}
           style={{
             padding: "12px 45px",
             borderRadius: "88px",
@@ -315,7 +366,7 @@ export default function TunnelScene() {
             backgroundColor: "white",
             color: "black",
             fontWeight: "900",
-            cursor: "pointer",
+            cursor: "none", // Hide default cursor over button
             fontSize: "12px",
             letterSpacing: "2px",
             boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
