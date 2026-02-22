@@ -10,8 +10,11 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* STANDALONE ROUTE: No global Layout. This lets the 3D Tunnel own the whole screen. */}
+        <Route path="/" element={<Home />} />
+
+        {/* NESTED ROUTES: These pages will still get the global navbar and footer from Layout */}
         <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
           <Route path="/menu" element={<Menu />} />
           <Route path="/work" element={<WorkList />} />
           <Route path="/project/:id" element={<ProjectDetail />} />

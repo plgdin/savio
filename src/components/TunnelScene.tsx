@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text, Float, useVideoTexture } from "@react-three/drei";
 import * as THREE from "three";
 
-// --- 1. DYNAMIC CONFIG: ALL 17 VIDEOS ---
+// --- DYNAMIC CONFIG ---
 const VIDEO_FILES = [
   "vid1.mp4",
   "WhatsApp Video 2026-02-21 at 3.00.26 PM.mp4",
@@ -30,18 +30,22 @@ const generateTunnelPanels = (files: string[]) => {
     const side = i % 4; 
     const depthStep = Math.floor(i / 4);
     const zPos = -5 - (depthStep * 12); 
+    
     let pos: [number, number, number] = [0, 0, 0];
     let rot: [number, number, number] = [0, 0, 0];
+    
     if (side === 0) { pos = [-7.9, 0, zPos]; rot = [0, Math.PI / 2, 0]; }
     else if (side === 1) { pos = [7.9, 0, zPos]; rot = [0, -Math.PI / 2, 0]; }
     else if (side === 2) { pos = [0, 6.9, zPos]; rot = [Math.PI / 2, 0, 0]; }
     else { pos = [0, -6.9, zPos]; rot = [-Math.PI / 2, 0, 0]; }
+
     return { url: `/${file}`, pos, rot, scale: [6, 3.5] as [number, number] };
   });
 };
 
 const TUNNEL_DATA = generateTunnelPanels(VIDEO_FILES);
 
+// --- 3D GRID SIDES ---
 const TunnelRoom = () => {
   const gridTexture = useMemo(() => {
     const canvas = document.createElement("canvas");
@@ -68,8 +72,19 @@ const TunnelRoom = () => {
   );
 };
 
+// --- GPU OPTIMIZED VIDEO PLANE ---
 const VideoPlane = ({ url, pos, rot, scale }: any) => {
-  const texture = useVideoTexture(url);
+  const texture = useVideoTexture(url, { crossOrigin: "Anonymous" });
+  
+  // This physically stops WebGL from duplicating the video into memory for mipmaps
+  useEffect(() => {
+    if (texture) {
+      texture.generateMipmaps = false;
+      texture.minFilter = THREE.LinearFilter;
+      texture.needsUpdate = true;
+    }
+  }, [texture]);
+
   return (
     <mesh position={pos} rotation={rot}>
       <planeGeometry args={scale} />
@@ -81,6 +96,7 @@ const VideoPlane = ({ url, pos, rot, scale }: any) => {
 const CameraController = () => {
   const targetZ = useRef(4); 
   const { camera } = useThree();
+
   useEffect(() => {
     camera.position.set(0, 0, -15);
     const handleWheel = (e: WheelEvent) => {
@@ -89,20 +105,23 @@ const CameraController = () => {
     window.addEventListener("wheel", handleWheel, { passive: true });
     return () => window.removeEventListener("wheel", handleWheel);
   }, [camera]);
+
   useFrame(() => {
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ.current, 0.05);
   });
   return null;
 };
 
+// --- CRASH-PROOF LOGO (No Font URL) ---
 const CentralLogo = () => (
   <group position={[0, 0, -4]}>
     <Text 
       fontSize={1.8} 
       scale={[1.5, 1, 1]} 
       color="#ffffff" 
-      font="/montserrat-Black.ttf" // Using your local font file to avoid CORS error
       fontWeight={900}
+      strokeWidth={0.03}
+      strokeColor="#ffffff"
       anchorX="center" 
       anchorY="middle"
     >
@@ -112,7 +131,6 @@ const CentralLogo = () => (
       fontSize={0.2} 
       position={[0, -1, 0]} 
       color="#ffffff" 
-      font="/montserrat-Black.ttf"
       letterSpacing={0.6}
       anchorX="center" 
       anchorY="middle"
@@ -125,21 +143,23 @@ const CentralLogo = () => (
 export default function TunnelScene() {
   return (
     <div style={{ width: "100vw", height: "100vh", background: "#000", position: "relative", overflow: "hidden" }}>
-      <Canvas gl={{ antialias: true, alpha: true }} camera={{ fov: 85 }}>
+      <Canvas gl={{ antialias: false, powerPreference: "high-performance" }} camera={{ fov: 85 }}>
         <Suspense fallback={null}>
           <CameraController />
           <TunnelRoom />
           <CentralLogo />
+
           {TUNNEL_DATA.map((panel, i) => (
             <Float key={i} speed={0.5} rotationIntensity={0.01} floatIntensity={0.02}>
               <VideoPlane {...panel} />
             </Float>
           ))}
+          
           <fog attach="fog" args={["#000", 30, 200]} />
         </Suspense>
       </Canvas>
 
-      {/* The single HTML Menu Button */}
+      {/* THE ONLY MENU BUTTON THAT SHOULD EXIST */}
       <div style={{ position: 'absolute', bottom: '30px', left: '50%', transform: 'translateX(-50%)', zIndex: 100 }}>
         <button style={{ 
           padding: '12px 45px', borderRadius: '88px', border: 'none', 
