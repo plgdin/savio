@@ -2,6 +2,7 @@ import React, { Suspense, useEffect, useRef, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text, Float, useVideoTexture } from "@react-three/drei";
 import * as THREE from "three";
+import { useNavigate } from "react-router-dom"; // <-- ROUTER IMPORT ADDED HERE
 
 // --- DYNAMIC CONFIG ---
 const VIDEO_FILES = [
@@ -141,6 +142,8 @@ const CentralLogo = () => (
 );
 
 export default function TunnelScene() {
+  const navigate = useNavigate(); // <-- ROUTER HOOK INITIALIZED HERE
+
   return (
     <div style={{ width: "100vw", height: "100vh", background: "#000", position: "relative", overflow: "hidden" }}>
       <Canvas gl={{ antialias: false, powerPreference: "high-performance" }} camera={{ fov: 85 }}>
@@ -159,13 +162,15 @@ export default function TunnelScene() {
         </Suspense>
       </Canvas>
 
-      {/* THE ONLY MENU BUTTON THAT SHOULD EXIST */}
+      {/* THE ONLY MENU BUTTON THAT SHOULD EXIST - NOW WIRED UP */}
       <div style={{ position: 'absolute', bottom: '30px', left: '50%', transform: 'translateX(-50%)', zIndex: 100 }}>
-        <button style={{ 
-          padding: '12px 45px', borderRadius: '88px', border: 'none', 
-          backgroundColor: 'white', color: 'black', fontWeight: '900', 
-          cursor: 'pointer', fontSize: '12px', letterSpacing: '2px',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+        <button 
+          onClick={() => navigate('/menu')} // <-- ONCLICK EVENT ADDED HERE
+          style={{ 
+            padding: '12px 45px', borderRadius: '88px', border: 'none', 
+            backgroundColor: 'white', color: 'black', fontWeight: '900', 
+            cursor: 'pointer', fontSize: '12px', letterSpacing: '2px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
         }}>MENU</button>
       </div>
     </div>
