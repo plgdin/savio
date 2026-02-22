@@ -1,10 +1,10 @@
 import React, { Suspense, useEffect, useRef, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Text, Float, useVideoTexture } from "@react-three/drei";
+import { Text, Float, useVideoTexture, Image } from "@react-three/drei"; // <-- Image imported here
 import * as THREE from "three";
-import { useNavigate } from "react-router-dom"; // <-- ROUTER IMPORT
+import { useNavigate } from "react-router-dom"; 
 
-// --- DYNAMIC CONFIG ---
+// --- DYNAMIC CONFIG: ALL 18 VIDEOS ---
 const VIDEO_FILES = [
   "vid1.mp4",
   "WhatsApp Video 2026-02-21 at 3.00.26 PM.mp4",
@@ -26,7 +26,7 @@ const VIDEO_FILES = [
   "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
 ];
 
-// --- "CONTROLLED CHAOS" GENERATOR (Matches your Framer Screenshot) ---
+// --- "CONTROLLED CHAOS" GENERATOR (Matches Framer Screenshot) ---
 const generatePseudoRandomPanels = (files: string[]) => {
   return files.map((file, i) => {
     const side = i % 4; 
@@ -74,7 +74,6 @@ const generatePseudoRandomPanels = (files: string[]) => {
 const TUNNEL_DATA = generatePseudoRandomPanels(VIDEO_FILES);
 
 // --- 3D GRID BACKGROUND ---
-// Pushed out slightly wider so it acts as a room for the angled videos
 const TunnelRoom = () => {
   const gridTexture = useMemo(() => {
     const canvas = document.createElement("canvas");
@@ -141,28 +140,25 @@ const CameraController = () => {
   return null;
 };
 
-// --- CRASH-PROOF LOGO ---
+// --- EXACT FRAMER SVG LOGO ---
 const CentralLogo = () => (
   <group position={[0, 0, -4]}>
+    {/* The broken stencil SVG pulled directly from Framer */}
+    <Image 
+      url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" 
+      scale={[8, 2.5]} 
+      transparent
+      toneMapped={false} 
+    />
+    
     <Text 
-      fontSize={1.8} 
-      scale={[1.5, 1, 1]} 
-      color="#ffffff" 
-      fontWeight={900}
-      strokeWidth={0.03}
-      strokeColor="#ffffff"
-      anchorX="center" 
-      anchorY="middle"
-    >
-      PANORAMA
-    </Text>
-    <Text 
-      fontSize={0.2} 
-      position={[0, -1, 0]} 
+      fontSize={0.25} 
+      position={[0, -1.6, 0]} 
       color="#ffffff" 
       letterSpacing={0.6}
       anchorX="center" 
       anchorY="middle"
+      fontWeight={800}
     >
       FILMS
     </Text>
