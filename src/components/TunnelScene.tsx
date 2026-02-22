@@ -26,50 +26,58 @@ const VIDEO_FILES = [
   "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
 ];
 
-// --- "STRICT THEATER TUNNEL" ALGORITHM ---
-// This permanently locks the center screen to be empty, matching Framer exactly.
-const generateTheaterPanels = (files: string[]) => {
+// --- "EXACT FRAMER MATH" ALGORITHM ---
+const generateScatteredTheater = (files: string[]) => {
   return files.map((file, i) => {
     const side = i % 4; // 0: Left, 1: Right, 2: Top, 3: Bottom
-    const depth = Math.floor(i / 4); // Rings of depth: 0, 1, 2, 3, 4
     
-    // Stretch videos deep into the background (Z goes from 0 to -45)
-    const zPos = 0 - (depth * 9) - (i % 2 === 0 ? 0 : 3);
+    // Z drops steadily from +2 to -45. Logo sits at -20.
+    const zPos = 2 - (i * 2.5); 
 
-    // The Framer Angle: ~32 degrees inward toward the viewer
-    const angle = 0.55; 
+    // Pseudo-random scatter using prime multipliers
+    const scatter1 = Math.sin(i * 13.7) * 7; 
+    const scatter2 = Math.cos(i * 19.3) * 3; 
+
+    // THE QUARANTINE ZONE: Videos cannot enter the center screen
+    const boundX = 9.5;  
+    const boundY = 6.0;  
+
+    // THE EXACT ANGLES STOLEN FROM FRAMER'S HTML (Converted to Radians)
+    const yAngle = 0.959; // 55 degrees for Left/Right walls
+    const xAngle = 1.274; // 73 degrees for Top/Bottom walls
+    
+    const zTilt = Math.sin(i * 1.1) * 0.05; // Slight organic rotation
 
     let pos: [number, number, number] = [0, 0, 0];
     let rot: [number, number, number] = [0, 0, 0];
-    const scale: [number, number] = [5.5, 3.1]; // Locked 16:9 ratio
 
-    // STRICT BOUNDARIES: Videos cannot enter the middle grid
-    if (side === 0) { 
-      // Left Wall: Hard locked to X < -9
-      pos = [-9 - (depth * 0.5), (i % 3) * 2 - 2, zPos]; 
-      rot = [0, angle, 0]; 
+    // Perfect 16:9 Aspect Ratio enforcement with varied sizing
+    const w = 4.5 + (i % 3) * 0.8; 
+    const h = w * 0.5625; 
+    const scale: [number, number] = [w, h];
+
+    if (side === 0) { // Left Wall
+      pos = [-boundX - Math.abs(scatter2), scatter1, zPos]; 
+      rot = [0, yAngle, zTilt]; 
     } 
-    else if (side === 1) { 
-      // Right Wall: Hard locked to X > 9
-      pos = [9 + (depth * 0.5), -((i % 3) * 2 - 2), zPos]; 
-      rot = [0, -angle, 0]; 
+    else if (side === 1) { // Right Wall
+      pos = [boundX + Math.abs(scatter2), -scatter1, zPos]; 
+      rot = [0, -yAngle, -zTilt]; 
     } 
-    else if (side === 2) { 
-      // Top Ceiling: Hard locked to Y > 6
-      pos = [(i % 3) * 3 - 3, 6 + (depth * 0.5), zPos]; 
-      rot = [angle, 0, 0]; 
+    else if (side === 2) { // Top Ceiling (Sky)
+      pos = [scatter1 * 1.5, boundY + Math.abs(scatter2), zPos]; 
+      rot = [xAngle, 0, zTilt]; 
     } 
-    else { 
-      // Bottom Floor: Hard locked to Y < -6
-      pos = [-((i % 3) * 3 - 3), -6 - (depth * 0.5), zPos]; 
-      rot = [-angle, 0, 0]; 
+    else { // Bottom Floor
+      pos = [-scatter1 * 1.5, -boundY - Math.abs(scatter2), zPos]; 
+      rot = [-xAngle, 0, -zTilt]; 
     }
 
     return { url: `/${file}`, pos, rot, scale };
   });
 };
 
-const TUNNEL_DATA = generateTheaterPanels(VIDEO_FILES);
+const TUNNEL_DATA = generateScatteredTheater(VIDEO_FILES);
 
 // --- 3D GRID ROOM ---
 const TunnelRoom = () => {
@@ -90,10 +98,10 @@ const TunnelRoom = () => {
 
   return (
     <group>
-      <mesh position={[-20, 0, -50]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
-      <mesh position={[20, 0, -50]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
-      <mesh position={[0, -15, -50]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[40, 400]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
-      <mesh position={[0, 15, -50]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[40, 400]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[-25, 0, -50]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[25, 0, -50]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[0, -18, -50]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[50, 400]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[0, 18, -50]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[50, 400]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
     </group>
   );
 };
@@ -102,6 +110,7 @@ const TunnelRoom = () => {
 const VideoPlane = ({ url, pos, rot, scale }: any) => {
   const texture = useVideoTexture(url, { crossOrigin: "Anonymous" });
   
+  // Physically stops WebGL from crashing by preventing duplicate mipmaps
   useEffect(() => {
     if (texture) {
       texture.generateMipmaps = false;
@@ -142,11 +151,11 @@ const CameraController = () => {
 // --- MAIN LOGO & DEEP TEXT ELEMENTS ---
 const TextCheckpoints = () => (
   <group>
-    {/* 1. Main Logo (Matches Initial Framer View) */}
+    {/* 1. Main Logo (Matches Initial Framer View exactly at z = -20) */}
     <group position={[0, 0, -20]}>
       <Image 
         url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" 
-        scale={[11, 3.2]} 
+        scale={[12, 3.5]} 
         transparent
         toneMapped={false} 
       />
@@ -185,7 +194,7 @@ export default function TunnelScene() {
           <TunnelRoom />
           <TextCheckpoints />
 
-          {/* Videos mathematically locked to the outer walls */}
+          {/* Videos mathematically scattered around the quarantine zone */}
           {TUNNEL_DATA.map((panel, i) => (
             <Float key={i} speed={0.8} rotationIntensity={0.02} floatIntensity={0.05}>
               <VideoPlane {...panel} />
