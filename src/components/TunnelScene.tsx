@@ -26,35 +26,32 @@ const VIDEO_FILES = [
   "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
 ];
 
-// --- "EXACT FRAMER MATH" ALGORITHM ---
+// --- "WIDE FUNNEL" ALGORITHM ---
 const generateScatteredTheater = (files: string[]) => {
   return files.map((file, i) => {
-    const side = i % 4; // 0: Left, 1: Right, 2: Top, 3: Bottom
+    const side = i % 4; 
     
-    // Z drops steadily from +2 to -45. Logo sits at -20.
-    const zPos = 2 - (i * 2.5); 
+    // Z drops steadily behind the massive logo
+    const zPos = -5 - (i * 3.5); 
 
-    // Pseudo-random scatter using prime multipliers
-    const scatter1 = Math.sin(i * 13.7) * 7; 
-    const scatter2 = Math.cos(i * 19.3) * 3; 
+    // WIDER QUARANTINE ZONE: Prevents videos from overlapping the huge logo
+    const boundX = 14;  
+    const boundY = 8.5;  
 
-    // THE QUARANTINE ZONE: Videos cannot enter the center screen
-    const boundX = 9.5;  
-    const boundY = 6.0;  
+    const scatter1 = Math.sin(i * 13.7) * 4; 
+    const scatter2 = Math.cos(i * 19.3) * 2; 
 
-    // THE EXACT ANGLES STOLEN FROM FRAMER'S HTML (Converted to Radians)
-    const yAngle = 0.959; // 55 degrees for Left/Right walls
-    const xAngle = 1.274; // 73 degrees for Top/Bottom walls
-    
-    const zTilt = Math.sin(i * 1.1) * 0.05; // Slight organic rotation
+    // Exact Framer tilt angles
+    const yAngle = 0.959; 
+    const xAngle = 1.274; 
+    const zTilt = Math.sin(i * 1.1) * 0.05; 
 
     let pos: [number, number, number] = [0, 0, 0];
     let rot: [number, number, number] = [0, 0, 0];
 
-    // Perfect 16:9 Aspect Ratio enforcement with varied sizing
-    const w = 4.5 + (i % 3) * 0.8; 
+    const w = 5.5 + (i % 3) * 0.8; 
     const h = w * 0.5625; 
-    const scale: [number, number] = [w, h];
+    const targetScale: [number, number] = [w, h];
 
     if (side === 0) { // Left Wall
       pos = [-boundX - Math.abs(scatter2), scatter1, zPos]; 
@@ -64,7 +61,7 @@ const generateScatteredTheater = (files: string[]) => {
       pos = [boundX + Math.abs(scatter2), -scatter1, zPos]; 
       rot = [0, -yAngle, -zTilt]; 
     } 
-    else if (side === 2) { // Top Ceiling (Sky)
+    else if (side === 2) { // Top Ceiling
       pos = [scatter1 * 1.5, boundY + Math.abs(scatter2), zPos]; 
       rot = [xAngle, 0, zTilt]; 
     } 
@@ -73,7 +70,7 @@ const generateScatteredTheater = (files: string[]) => {
       rot = [-xAngle, 0, -zTilt]; 
     }
 
-    return { url: `/${file}`, pos, rot, scale };
+    return { url: `/${file}`, pos, rot, targetScale };
   });
 };
 
@@ -98,19 +95,22 @@ const TunnelRoom = () => {
 
   return (
     <group>
-      <mesh position={[-25, 0, -50]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
-      <mesh position={[25, 0, -50]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
-      <mesh position={[0, -18, -50]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[50, 400]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
-      <mesh position={[0, 18, -50]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[50, 400]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[-28, 0, -50]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[28, 0, -50]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[0, -20, -50]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[60, 400]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[0, 20, -50]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[60, 400]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
     </group>
   );
 };
 
-// --- GPU OPTIMIZED VIDEO PLANE ---
-const VideoPlane = ({ url, pos, rot, scale }: any) => {
+// --- ANIMATED "POP-IN" VIDEO PLANE ---
+const VideoPlane = ({ url, pos, rot, targetScale, index }: any) => {
   const texture = useVideoTexture(url, { crossOrigin: "Anonymous" });
+  const meshRef = useRef<THREE.Mesh>(null);
   
-  // Physically stops WebGL from crashing by preventing duplicate mipmaps
+  // Create a Vector3 for the target scale so we can smoothly animate to it
+  const finalScale = useMemo(() => new THREE.Vector3(targetScale[0], targetScale[1], 1), [targetScale]);
+
   useEffect(() => {
     if (texture) {
       texture.generateMipmaps = false;
@@ -119,9 +119,21 @@ const VideoPlane = ({ url, pos, rot, scale }: any) => {
     }
   }, [texture]);
 
+  useFrame((state) => {
+    if (meshRef.current) {
+      // Staggered Pop Animation: Delay based on index
+      const delay = index * 0.08; 
+      if (state.clock.elapsedTime > delay) {
+        // Lerp scales the mesh up from 0 to its full size smoothly
+        meshRef.current.scale.lerp(finalScale, 0.08);
+      }
+    }
+  });
+
   return (
-    <mesh position={pos} rotation={rot}>
-      <planeGeometry args={scale} />
+    // Initial scale is forced to [0,0,0] so they pop in on load
+    <mesh ref={meshRef} position={pos} rotation={rot} scale={[0, 0, 0]}>
+      <planeGeometry args={[1, 1]} /> 
       <meshBasicMaterial map={texture} toneMapped={false} />
     </mesh>
   );
@@ -129,14 +141,13 @@ const VideoPlane = ({ url, pos, rot, scale }: any) => {
 
 // --- CAMERA CONTROLLER ---
 const CameraController = () => {
-  const targetZ = useRef(8); 
+  const targetZ = useRef(10); 
   const { camera } = useThree();
 
   useEffect(() => {
-    camera.position.set(0, 0, 8); // Start slightly pulled back
+    camera.position.set(0, 0, 10); // Start far back to see the massive logo
     const handleWheel = (e: WheelEvent) => {
-      // Allows scrolling extremely deep to find the hidden text (-100 depth)
-      targetZ.current = Math.max(-100, Math.min(10, targetZ.current - e.deltaY * 0.08));
+      targetZ.current = Math.max(-120, Math.min(10, targetZ.current - e.deltaY * 0.08));
     };
     window.addEventListener("wheel", handleWheel, { passive: true });
     return () => window.removeEventListener("wheel", handleWheel);
@@ -148,36 +159,33 @@ const CameraController = () => {
   return null;
 };
 
-// --- MAIN LOGO & DEEP TEXT ELEMENTS ---
+// --- MAIN LOGO & HIDDEN DEEP TEXT ---
 const TextCheckpoints = () => (
   <group>
-    {/* 1. Main Logo (Matches Initial Framer View exactly at z = -20) */}
-    <group position={[0, 0, -20]}>
+    {/* 1. HUGE Initial Logo */}
+    <group position={[0, 0, -12]}>
       <Image 
         url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" 
-        scale={[12, 3.5]} 
+        scale={[24, 7]} // Made extremely large
         transparent
         toneMapped={false} 
       />
     </group>
 
-    {/* 2. Hidden Text Checkpoint 1 (Revealed when scrolling past the main logo) */}
-    <group position={[0, 0, -50]}>
-      <Text fontSize={2.5} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">
+    {/* 2. Hidden Text 1 (Swallowed by Fog until you scroll) */}
+    <group position={[0, 0, -55]}>
+      <Text fontSize={3} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">
         FEATURED WORK
       </Text>
-      <Text fontSize={0.3} position={[0, -1.8, 0]} color="#aaaaaa" letterSpacing={0.5} anchorX="center" anchorY="middle">
+      <Text fontSize={0.4} position={[0, -2, 0]} color="#aaaaaa" letterSpacing={0.5} anchorX="center" anchorY="middle">
         SCROLL DEEPER
       </Text>
     </group>
 
-    {/* 3. Hidden Text Checkpoint 2 (End of the tunnel) */}
-    <group position={[0, 0, -85]}>
-      <Text fontSize={3} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">
+    {/* 3. Hidden Text 2 */}
+    <group position={[0, 0, -95]}>
+      <Text fontSize={3.5} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">
         OUR DIRECTORS
-      </Text>
-      <Text fontSize={0.4} position={[0, -2, 0]} color="#aaaaaa" letterSpacing={0.8} anchorX="center" anchorY="middle">
-        THE VISIONARIES
       </Text>
     </group>
   </group>
@@ -194,15 +202,15 @@ export default function TunnelScene() {
           <TunnelRoom />
           <TextCheckpoints />
 
-          {/* Videos mathematically scattered around the quarantine zone */}
+          {/* Videos with exact index passed down for staggered pop-in animation */}
           {TUNNEL_DATA.map((panel, i) => (
             <Float key={i} speed={0.8} rotationIntensity={0.02} floatIntensity={0.05}>
-              <VideoPlane {...panel} />
+              <VideoPlane {...panel} index={i} />
             </Float>
           ))}
           
-          {/* Deep fog allows the tunnel to fade out smoothly in the distance */}
-          <fog attach="fog" args={["#000", 30, 150]} />
+          {/* THE BLACK VOID FOG: Hides the deep text perfectly until you scroll into it */}
+          <fog attach="fog" args={["#000", 25, 65]} />
         </Suspense>
       </Canvas>
 
