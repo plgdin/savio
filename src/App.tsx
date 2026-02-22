@@ -9,6 +9,10 @@ import React from 'react';
 function App() {
   return (
     <BrowserRouter>
+      {/* GLOBAL OVERLAYS: These sit behind/above everything on every page */}
+      <div className="framer-grid" />
+      <div className="noise-overlay" />
+
       <Routes>
         {/* STANDALONE ROUTE: No global Layout. This lets the 3D Tunnel own the whole screen. */}
         <Route path="/" element={<Home />} />
