@@ -26,23 +26,21 @@ const VIDEO_FILES = [
   "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
 ];
 
-// --- EXACT FRAMER GEOMETRY ---
+// --- "EXACT FRAMER MATH" ALGORITHM ---
 const generateScatteredTheater = (files: string[]) => {
   return files.map((file, i) => {
-    const side = i % 4; // 0: Left, 1: Right, 2: Top, 3: Bottom
-    
-    const zPos = -5 - (i * 3); // Deep tunnel
-    
-    // Quarantine boundaries so they NEVER hit the central logo
-    const boundX = 11;  
-    const boundY = 7;  
+    const side = i % 4; 
+    const zPos = 2 - (i * 2.5); 
 
-    const scatter1 = Math.sin(i * 13.7) * 4; 
-    const scatter2 = Math.cos(i * 19.3) * 2; 
+    const scatter1 = Math.sin(i * 13.7) * 7; 
+    const scatter2 = Math.cos(i * 19.3) * 3; 
 
-    // The Exact Framer CSS Rotation Angles
-    const yAngle = 0.959; // 55 deg
-    const xAngle = 1.274; // 73 deg
+    const boundX = 9.5;  
+    const boundY = 6.0;  
+
+    // Exact Framer CSS Rotation Angles
+    const yAngle = 0.959; // 55 degrees 
+    const xAngle = 1.274; // 73 degrees 
     const zTilt = Math.sin(i * 1.1) * 0.05; 
 
     let pos: [number, number, number] = [0, 0, 0];
@@ -52,31 +50,50 @@ const generateScatteredTheater = (files: string[]) => {
     const h = w * 0.5625; 
     const targetScale: [number, number] = [w, h];
 
-    if (side === 0) { // Left Wall
+    if (side === 0) { // Left
       pos = [-boundX - Math.abs(scatter2), scatter1, zPos]; 
       rot = [0, yAngle, zTilt]; 
     } 
-    else if (side === 1) { // Right Wall
+    else if (side === 1) { // Right
       pos = [boundX + Math.abs(scatter2), -scatter1, zPos]; 
       rot = [0, -yAngle, -zTilt]; 
     } 
-    else if (side === 2) { // Top Ceiling
+    else if (side === 2) { // Top 
       pos = [scatter1 * 1.5, boundY + Math.abs(scatter2), zPos]; 
       rot = [xAngle, 0, zTilt]; 
     } 
-    else { // Bottom Floor
+    else { // Bottom 
       pos = [-scatter1 * 1.5, -boundY - Math.abs(scatter2), zPos]; 
       rot = [-xAngle, 0, -zTilt]; 
     }
 
-    // Passing 'side' down so the animation knows which edge to fly in from
-    return { url: `/${file}`, pos, rot, targetScale, side };
+    return { url: `/${file}`, pos, rot, targetScale };
   });
 };
 
 const TUNNEL_DATA = generateScatteredTheater(VIDEO_FILES);
 
-// --- 3D GRID ROOM ---
+// --- DYNAMIC BACKGROUND & FOG CONTROLLER ---
+const ThemeController = () => {
+  const { scene } = useThree();
+  const bgColor = useMemo(() => new THREE.Color("#ffffff"), []);
+
+  useFrame((state) => {
+    // At 0.8 seconds, flip from White to Black
+    const isDark = state.clock.elapsedTime > 0.8;
+    const targetColor = new THREE.Color(isDark ? "#000000" : "#ffffff");
+    
+    bgColor.lerp(targetColor, 0.1);
+    scene.background = bgColor;
+    
+    // Create thick fog so deep text is 100% invisible on load
+    if (!scene.fog) scene.fog = new THREE.Fog("#ffffff", 25, 60);
+    scene.fog.color.copy(bgColor);
+  });
+  return null;
+};
+
+// --- FADING 3D GRID ROOM ---
 const TunnelRoom = () => {
   const gridTexture = useMemo(() => {
     const canvas = document.createElement("canvas");
@@ -93,24 +110,38 @@ const TunnelRoom = () => {
     return tex;
   }, []);
 
+  const matRefs = useRef<THREE.MeshBasicMaterial[]>([]);
+
+  useFrame((state) => {
+    // Only fade the grid in after the screen turns black
+    const isDark = state.clock.elapsedTime > 0.8;
+    matRefs.current.forEach(mat => {
+      if (mat) mat.opacity = THREE.MathUtils.lerp(mat.opacity, isDark ? 0.15 : 0, 0.1);
+    });
+  });
+
   return (
     <group>
-      <mesh position={[-25, 0, -50]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
-      <mesh position={[25, 0, -50]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
-      <mesh position={[0, -18, -50]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[50, 400]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
-      <mesh position={[0, 18, -50]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[50, 400]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[-25, 0, -50]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial ref={(el) => (matRefs.current[0] = el as any)} map={gridTexture} transparent opacity={0} /></mesh>
+      <mesh position={[25, 0, -50]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial ref={(el) => (matRefs.current[1] = el as any)} map={gridTexture} transparent opacity={0} /></mesh>
+      <mesh position={[0, -18, -50]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[50, 400]} /><meshBasicMaterial ref={(el) => (matRefs.current[2] = el as any)} map={gridTexture} transparent opacity={0} /></mesh>
+      <mesh position={[0, 18, -50]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[50, 400]} /><meshBasicMaterial ref={(el) => (matRefs.current[3] = el as any)} map={gridTexture} transparent opacity={0} /></mesh>
     </group>
   );
 };
 
-// --- ANIMATED "FLY-IN" VIDEO PLANE ---
-const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index, side }: any) => {
+// --- EXPLODING "FLY-OUT" VIDEO PLANE ---
+const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index }: any) => {
   const texture = useVideoTexture(url, { crossOrigin: "Anonymous" });
   const meshRef = useRef<THREE.Mesh>(null);
-  const isInitialized = useRef(false);
+  const isInit = useRef(false);
   
   const finalPos = useMemo(() => new THREE.Vector3(...targetPos), [targetPos]);
   const finalScale = useMemo(() => new THREE.Vector3(targetScale[0], targetScale[1], 1), [targetScale]);
+  
+  // Starting point: Hidden completely behind the central logo
+  const startPos = useMemo(() => new THREE.Vector3(0, 0, -25), []);
+  const startScale = useMemo(() => new THREE.Vector3(0, 0, 0), []);
 
   useEffect(() => {
     if (texture) {
@@ -122,20 +153,17 @@ const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index, side }: any)
 
   useFrame((state) => {
     if (meshRef.current) {
-      // 1. Initial State: Force videos WAY off-screen and scaled down to 0.4 (just like Framer HTML)
-      if (!isInitialized.current) {
-        const startX = side === 0 ? targetPos[0] - 40 : side === 1 ? targetPos[0] + 40 : targetPos[0];
-        const startY = side === 2 ? targetPos[1] + 40 : side === 3 ? targetPos[1] - 40 : targetPos[1];
-        meshRef.current.position.set(startX, startY, targetPos[2]);
-        meshRef.current.scale.set(targetScale[0] * 0.4, targetScale[1] * 0.4, 1);
-        isInitialized.current = true;
+      if (!isInit.current) {
+        meshRef.current.position.copy(startPos);
+        meshRef.current.scale.copy(startScale);
+        isInit.current = true;
       }
 
-      // 2. The Animation: Wait 0.6 seconds for Logo to pop, then stagger the videos flying in
-      const delay = 0.6 + (index * 0.04); 
+      // Explosion delay: Wait for screen to turn black (0.8s) + slight stagger
+      const delay = 1.0 + (index * 0.04); 
       if (state.clock.elapsedTime > delay) {
-        meshRef.current.position.lerp(finalPos, 0.06); // Flies inward
-        meshRef.current.scale.lerp(finalScale, 0.06);  // Scales up to 1.0
+        meshRef.current.position.lerp(finalPos, 0.08); // Shoot outwards
+        meshRef.current.scale.lerp(finalScale, 0.08);  // Scale up dynamically
       }
     }
   });
@@ -150,13 +178,13 @@ const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index, side }: any)
 
 // --- CAMERA CONTROLLER ---
 const CameraController = () => {
-  const targetZ = useRef(10); 
+  const targetZ = useRef(8); 
   const { camera } = useThree();
 
   useEffect(() => {
-    camera.position.set(0, 0, 10); 
+    camera.position.set(0, 0, 8); 
     const handleWheel = (e: WheelEvent) => {
-      targetZ.current = Math.max(-100, Math.min(10, targetZ.current - e.deltaY * 0.08));
+      targetZ.current = Math.max(-150, Math.min(10, targetZ.current - e.deltaY * 0.08));
     };
     window.addEventListener("wheel", handleWheel, { passive: true });
     return () => window.removeEventListener("wheel", handleWheel);
@@ -168,32 +196,30 @@ const CameraController = () => {
   return null;
 };
 
-// --- LOGO POP & HIDDEN DEEP TEXT ---
+// --- LOGO COLOR FLIP & HIDDEN DEEP TEXT ---
 const TextCheckpoints = () => {
-  const logoGroupRef = useRef<THREE.Group>(null);
-  const finalLogoScale = useMemo(() => new THREE.Vector3(1, 1, 1), []);
+  const whiteLogoRef = useRef<THREE.Mesh>(null);
+  const blackLogoRef = useRef<THREE.Mesh>(null);
 
-  useFrame(() => {
-    if (logoGroupRef.current) {
-      // The Logo pops into existence immediately
-      logoGroupRef.current.scale.lerp(finalLogoScale, 0.08);
+  useFrame((state) => {
+    const isDark = state.clock.elapsedTime > 0.8;
+    // Crossfade the logos at 0.8 seconds to invert colors with the background
+    if (whiteLogoRef.current && blackLogoRef.current) {
+      (whiteLogoRef.current.material as THREE.Material).opacity = THREE.MathUtils.lerp((whiteLogoRef.current.material as THREE.Material).opacity, isDark ? 1 : 0, 0.2);
+      (blackLogoRef.current.material as THREE.Material).opacity = THREE.MathUtils.lerp((blackLogoRef.current.material as THREE.Material).opacity, isDark ? 0 : 1, 0.2);
     }
   });
 
   return (
     <group>
-      {/* 1. Main Logo (Starts at scale 0, pops to full size) */}
-      <group position={[0, 0, -20]} ref={logoGroupRef} scale={[0, 0, 0]}>
-        <Image 
-          url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" 
-          scale={[16, 4.6]} 
-          transparent
-          toneMapped={false} 
-        />
+      {/* 1. Massive Center Logo (z = -20) */}
+      <group position={[0, 0, -20]} scale={[12, 3.5, 1]}>
+        <Image ref={whiteLogoRef} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#ffffff" />
+        <Image ref={blackLogoRef} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#000000" position={[0,0,0.01]} />
       </group>
 
-      {/* 2. Hidden Text 1 (Swallowed by Fog at z=-65 until you scroll) */}
-      <group position={[0, 0, -65]}>
+      {/* 2. Hidden Text 1 (Swallowed by Fog at z=-80 until you scroll) */}
+      <group position={[0, 0, -80]}>
         <Text fontSize={3} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">
           FEATURED WORK
         </Text>
@@ -203,7 +229,7 @@ const TextCheckpoints = () => {
       </group>
 
       {/* 3. Hidden Text 2 (End of tunnel) */}
-      <group position={[0, 0, -95]}>
+      <group position={[0, 0, -130]}>
         <Text fontSize={3.5} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">
           OUR DIRECTORS
         </Text>
@@ -216,22 +242,20 @@ export default function TunnelScene() {
   const navigate = useNavigate();
 
   return (
-    <div style={{ width: "100vw", height: "100vh", background: "#000", position: "relative", overflow: "hidden" }}>
+    <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       <Canvas gl={{ antialias: false, powerPreference: "high-performance" }} camera={{ fov: 85 }}>
         <Suspense fallback={null}>
+          <ThemeController />
           <CameraController />
           <TunnelRoom />
           <TextCheckpoints />
 
-          {/* Render the Animated Fly-In Panels */}
+          {/* Videos stagger-explode outward from behind the logo */}
           {TUNNEL_DATA.map((panel, i) => (
             <Float key={i} speed={0.8} rotationIntensity={0.02} floatIntensity={0.05}>
               <VideoPlane {...panel} index={i} />
             </Float>
           ))}
-          
-          {/* THE BLACK VOID: Hides anything past Z = -65 from the starting camera */}
-          <fog attach="fog" args={["#000", 25, 75]} />
         </Suspense>
       </Canvas>
 
@@ -239,10 +263,10 @@ export default function TunnelScene() {
         <button 
           onClick={() => navigate('/menu')} 
           style={{ 
-            padding: '12px 45px', borderRadius: '88px', border: 'none', 
+            padding: '12px 45px', borderRadius: '88px', border: '1px solid #ddd', 
             backgroundColor: 'white', color: 'black', fontWeight: '900', 
             cursor: 'pointer', fontSize: '12px', letterSpacing: '2px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+            boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
         }}>MENU</button>
       </div>
     </div>
