@@ -26,99 +26,26 @@ const VIDEO_FILES = [
   "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
 ];
 
-// --- EXACT FRAMER MATH ALGORITHM ---
-const generateScatteredTheater = (files: string[]) => {
-  return files.map((file, i) => {
-    const side = i % 4; 
-    const zPos = 2 - (i * 2.5); 
-
-    const scatter1 = Math.sin(i * 13.7) * 7; 
-    const scatter2 = Math.cos(i * 19.3) * 3; 
-
-    const boundX = 9.5;  
-    const boundY = 6.0;  
-
-    const yAngle = 0.959; // 55 degrees 
-    const xAngle = 1.274; // 73 degrees 
-    const zTilt = Math.sin(i * 1.1) * 0.05; 
-
-    let pos: [number, number, number] = [0, 0, 0];
-    let rot: [number, number, number] = [0, 0, 0];
-
-    const w = 4.5 + (i % 3) * 0.8; 
-    const h = w * 0.5625; 
-    const targetScale: [number, number] = [w, h];
-
-    if (side === 0) { // Left
-      pos = [-boundX - Math.abs(scatter2), scatter1, zPos]; 
-      rot = [0, yAngle, zTilt]; 
-    } 
-    else if (side === 1) { // Right
-      pos = [boundX + Math.abs(scatter2), -scatter1, zPos]; 
-      rot = [0, -yAngle, -zTilt]; 
-    } 
-    else if (side === 2) { // Top 
-      pos = [scatter1 * 1.5, boundY + Math.abs(scatter2), zPos]; 
-      rot = [xAngle, 0, zTilt]; 
-    } 
-    else { // Bottom 
-      pos = [-scatter1 * 1.5, -boundY - Math.abs(scatter2), zPos]; 
-      rot = [-xAngle, 0, -zTilt]; 
-    }
-
-    return { url: `/${file}`, pos, rot, targetScale };
-  });
-};
-
-const TUNNEL_DATA = generateScatteredTheater(VIDEO_FILES);
-
-// --- THE EXACT SVG WIREFRAME FROM FRAMER ---
-const BackgroundWireframe = ({ isDark }: { isDark: boolean }) => (
-  <div style={{
-    position: 'absolute', inset: 0, zIndex: 0,
-    backgroundColor: isDark ? '#000000' : '#ffffff',
-    transition: 'background-color 0.1s', // Brutal, fast snap
-    display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden'
-  }}>
-    <svg 
-      viewBox="0 0 1516 832" 
-      preserveAspectRatio="xMidYMid slice" 
-      style={{ 
-        width: '100%', height: '100%', 
-        opacity: isDark ? 0.25 : 0, // Fades in when the screen turns black
-        transition: 'opacity 0.6s ease-in-out' 
-      }}
-    >
-      <g stroke="#ffffff" strokeWidth="1" fill="none">
-        <path d="M624.25 338.251h258.5v144.5h-258.5z"/>
-        <path d="M586.25 314.25h333.5v192.5h-333.5z"/>
-        <path d="M558.25 295.25h389.5v230.5h-389.5z"/>
-        <path d="M505.25 261.25h495.5v298.5h-495.5v-298.5Z"/>
-        <path d="M427.25 210.25h652.5v400.5h-652.5v-400.5Z"/>
-        <path d="M283.25 116.25h940.5v588.5h-940.5v-588.5Z"/>
-        <path d="M106.25 11.25h1230.5v808.5H106.25V11.25ZM723.5 482.5 543.778 830.884M723.5 338.672 543.778-9.712M674 483 337 829.496m337-491.324L337-8.324m544.499 490.823 536.111 348.497M881.499 338.673 1417.61-9.824M624.833 482.498 88.72 830.995m536.113-492.321L88.72-9.823M840 482.5l338.11 346.997M840 338.672 1178.11-8.325M793.5 483l179.722 347.884M793.5 338.171 973.222-9.712M758.249 830.999l.001-348.499m-.001-492.327.001 348.499M883 409.939h749.33m-1007.999-1H-125m1008-33.438 744.33-173m-1002.999 172-744.331-173m1003 249.5 747.83 133m-1006.498-134-747.831 133"/>
-      </g>
-    </svg>
-  </div>
-);
-
-// --- DYNAMIC FOG CONTROLLER ---
-// Since the background is now HTML, the Canvas is transparent. We just sync the Fog color to match the HTML.
-const FogController = ({ isDark }: { isDark: boolean }) => {
+// --- FLASHBANG & FOG CONTROLLER ---
+const ThemeController = () => {
   const { scene } = useThree();
-  const fogColor = useMemo(() => new THREE.Color("#ffffff"), []);
-  
-  useFrame(() => {
+  const bgColor = useMemo(() => new THREE.Color("#ffffff"), []);
+
+  useFrame((state) => {
+    const isDark = state.clock.elapsedTime > 0.8;
     const targetColor = new THREE.Color(isDark ? "#000000" : "#ffffff");
-    fogColor.lerp(targetColor, 0.1);
-    if (!scene.fog) scene.fog = new THREE.Fog("#ffffff", 25, 60);
-    scene.fog.color.copy(fogColor);
+    bgColor.lerp(targetColor, 0.1);
+    scene.background = bgColor;
+    
+    // Dense fog hides the deep text
+    if (!scene.fog) scene.fog = new THREE.Fog("#ffffff", 20, 60);
+    scene.fog.color.copy(bgColor);
   });
   return null;
 };
 
-// --- EXPLODING VIDEO PLANE ---
-const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index }: any) => {
+// --- ANIMATED FLY-IN VIDEO PLANE ---
+const VideoPlane = ({ url, targetPos, targetScale, index }: any) => {
   const texture = useVideoTexture(url, { crossOrigin: "Anonymous" });
   const meshRef = useRef<THREE.Mesh>(null);
   const isInit = useRef(false);
@@ -126,8 +53,8 @@ const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index }: any) => {
   const finalPos = useMemo(() => new THREE.Vector3(...targetPos), [targetPos]);
   const finalScale = useMemo(() => new THREE.Vector3(targetScale[0], targetScale[1], 1), [targetScale]);
   
-  // Videos hide directly behind the logo waiting to explode
-  const startPos = useMemo(() => new THREE.Vector3(0, 0, -20), []);
+  // Videos start deep behind the physical wall and punch through it
+  const startPos = useMemo(() => new THREE.Vector3(0, 0, -30), []);
   const startScale = useMemo(() => new THREE.Vector3(0, 0, 0), []);
 
   useEffect(() => {
@@ -146,7 +73,7 @@ const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index }: any) => {
         isInit.current = true;
       }
 
-      // Explosion trigger: Fires right after the screen flashes to black
+      // Explosion trigger
       const delay = 0.9 + (index * 0.03); 
       if (state.clock.elapsedTime > delay) {
         meshRef.current.position.lerp(finalPos, 0.08); 
@@ -156,10 +83,59 @@ const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index }: any) => {
   });
 
   return (
-    <mesh ref={meshRef} rotation={rot}>
+    <mesh ref={meshRef}>
       <planeGeometry args={[1, 1]} /> 
       <meshBasicMaterial map={texture} toneMapped={false} />
     </mesh>
+  );
+};
+
+// --- 3D PERSPECTIVE FUNNEL WALL ---
+const WallGroup = ({ type, position, rotation, videos }: any) => {
+  // Generate a sharp, mathematically perfect wireframe grid texture
+  const gridTexture = useMemo(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1024; canvas.height = 1024;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+      ctx.lineWidth = 2;
+      for (let i = 0; i <= 1024; i += 64) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 1024); ctx.stroke(); // Verticals
+        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(1024, i); ctx.stroke(); // Horizontals
+      }
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(10, 40); // Stretches grid deep into the tunnel
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    return tex;
+  }, []);
+
+  const gridMatRef = useRef<THREE.MeshBasicMaterial>(null);
+
+  useFrame((state) => {
+    const isDark = state.clock.elapsedTime > 0.8;
+    if (gridMatRef.current) {
+      gridMatRef.current.opacity = THREE.MathUtils.lerp(gridMatRef.current.opacity, isDark ? 1 : 0, 0.1);
+    }
+  });
+
+  return (
+    <group position={position} rotation={rotation}>
+      {/* The physical grid wall */}
+      <mesh position={[0, 0, 0]}>
+        <planeGeometry args={[400, 400]} />
+        <meshBasicMaterial ref={gridMatRef} map={gridTexture} transparent opacity={0} depthWrite={false} />
+      </mesh>
+
+      {/* Videos mapped DIRECTLY onto the grid wall (Z=0.1 to sit just on top of lines) */}
+      {videos.map((vid: any, i: number) => (
+        <Float key={i} speed={0.8} rotationIntensity={0.01} floatIntensity={0.05}>
+          <VideoPlane url={vid.url} targetPos={[vid.x, vid.y, 0.1]} targetScale={vid.scale} index={vid.globalIndex} />
+        </Float>
+      ))}
+    </group>
   );
 };
 
@@ -171,7 +147,7 @@ const CameraController = () => {
   useEffect(() => {
     camera.position.set(0, 0, 8); 
     const handleWheel = (e: WheelEvent) => {
-      targetZ.current = Math.max(-150, Math.min(10, targetZ.current - e.deltaY * 0.08));
+      targetZ.current = Math.max(-120, Math.min(10, targetZ.current - e.deltaY * 0.08));
     };
     window.addEventListener("wheel", handleWheel, { passive: true });
     return () => window.removeEventListener("wheel", handleWheel);
@@ -183,7 +159,7 @@ const CameraController = () => {
   return null;
 };
 
-// --- LOGO COLOR FLIP & HIDDEN DEEP TEXT ---
+// --- LOGO & DEEP TEXT ---
 const TextCheckpoints = () => {
   const whiteLogoRef = useRef<THREE.Mesh>(null);
   const blackLogoRef = useRef<THREE.Mesh>(null);
@@ -198,27 +174,18 @@ const TextCheckpoints = () => {
 
   return (
     <group>
-      {/* MASSIVE Center Logo (Fixed Cropping Issue) */}
       <group position={[0, 0, -20]}>
         <Image ref={whiteLogoRef} scale={[22, 6.4]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#ffffff" />
         <Image ref={blackLogoRef} scale={[22, 6.4]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#000000" position={[0,0,0.01]} />
       </group>
 
-      {/* Hidden Text 1 */}
-      <group position={[0, 0, -80]}>
-        <Text fontSize={3} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">
-          FEATURED WORK
-        </Text>
-        <Text fontSize={0.4} position={[0, -2, 0]} color="#aaaaaa" letterSpacing={0.5} anchorX="center" anchorY="middle">
-          SCROLL DEEPER
-        </Text>
+      <group position={[0, 0, -60]}>
+        <Text fontSize={3} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">FEATURED WORK</Text>
+        <Text fontSize={0.4} position={[0, -2, 0]} color="#aaaaaa" letterSpacing={0.5} anchorX="center" anchorY="middle">SCROLL DEEPER</Text>
       </group>
 
-      {/* Hidden Text 2 */}
-      <group position={[0, 0, -130]}>
-        <Text fontSize={3.5} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">
-          OUR DIRECTORS
-        </Text>
+      <group position={[0, 0, -100]}>
+        <Text fontSize={3.5} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">OUR DIRECTORS</Text>
       </group>
     </group>
   );
@@ -226,32 +193,46 @@ const TextCheckpoints = () => {
 
 export default function TunnelScene() {
   const navigate = useNavigate();
-  const [isDark, setIsDark] = useState(false);
 
-  // Trigger the flashbang sequence globally
-  useEffect(() => {
-    const timer = setTimeout(() => setIsDark(true), 800);
-    return () => clearTimeout(timer);
+  // Distribute the 18 videos perfectly across the 4 physical walls
+  const wallData = useMemo(() => {
+    const w = { left: [] as any[], right: [] as any[], top: [] as any[], bottom: [] as any[] };
+    
+    VIDEO_FILES.forEach((url, i) => {
+      const side = i % 4;
+      const depthStep = Math.floor(i / 4);
+      
+      const width = 4.5 + (i % 3) * 0.8;
+      const height = width * 0.5625;
+      const scale = [width, height];
+      
+      // Calculate depth and scatter based on which wall it is
+      // Math ensures they stagger backward evenly down the wall
+      const depthDist = 10 + (depthStep * 16); 
+      const scatter = (i % 3) * 6 - 6; 
+
+      if (side === 0) w.left.push({ url, x: -depthDist, y: scatter, scale, globalIndex: i });
+      else if (side === 1) w.right.push({ url, x: depthDist, y: scatter, scale, globalIndex: i });
+      else if (side === 2) w.top.push({ url, x: scatter, y: -depthDist, scale, globalIndex: i });
+      else w.bottom.push({ url, x: scatter, y: depthDist, scale, globalIndex: i });
+    });
+    return w;
   }, []);
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
-      
-      {/* The Authentic Framer SVG Wireframe Grid sitting securely in the background */}
-      <BackgroundWireframe isDark={isDark} />
-
-      {/* The transparent 3D Canvas sits on top of the wireframe */}
-      <Canvas style={{ position: 'absolute', inset: 0, zIndex: 1 }} gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }} camera={{ fov: 85 }}>
+      <Canvas gl={{ antialias: true, powerPreference: "high-performance" }} camera={{ fov: 85 }}>
         <Suspense fallback={null}>
-          <FogController isDark={isDark} />
+          <ThemeController />
           <CameraController />
           <TextCheckpoints />
 
-          {TUNNEL_DATA.map((panel, i) => (
-            <Float key={i} speed={0.8} rotationIntensity={0.02} floatIntensity={0.05}>
-              <VideoPlane {...panel} index={i} />
-            </Float>
-          ))}
+          {/* THE 4 PHYSICAL TUNNEL WALLS (Exact Framer Angles) */}
+          <WallGroup type="left" position={[-11, 0, 0]} rotation={[0, 0.959, 0]} videos={wallData.left} />
+          <WallGroup type="right" position={[11, 0, 0]} rotation={[0, -0.959, 0]} videos={wallData.right} />
+          <WallGroup type="top" position={[0, 7, 0]} rotation={[1.274, 0, 0]} videos={wallData.top} />
+          <WallGroup type="bottom" position={[0, -7, 0]} rotation={[-1.274, 0, 0]} videos={wallData.bottom} />
+          
         </Suspense>
       </Canvas>
 
