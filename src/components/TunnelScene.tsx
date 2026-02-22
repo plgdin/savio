@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useRef, useMemo } from "react";
+import React, { Suspense, useEffect, useRef, useMemo, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text, Float, useVideoTexture, Image } from "@react-three/drei"; 
 import * as THREE from "three";
@@ -26,7 +26,7 @@ const VIDEO_FILES = [
   "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
 ];
 
-// --- "EXACT FRAMER MATH" ALGORITHM ---
+// --- EXACT FRAMER MATH ALGORITHM ---
 const generateScatteredTheater = (files: string[]) => {
   return files.map((file, i) => {
     const side = i % 4; 
@@ -35,11 +35,9 @@ const generateScatteredTheater = (files: string[]) => {
     const scatter1 = Math.sin(i * 13.7) * 7; 
     const scatter2 = Math.cos(i * 19.3) * 3; 
 
-    // WIDER QUARANTINE ZONE: Pushed out to make room for the massive logo
-    const boundX = 13.0;  
-    const boundY = 7.5;  
+    const boundX = 9.5;  
+    const boundY = 6.0;  
 
-    // Exact Framer CSS Rotation Angles
     const yAngle = 0.959; // 55 degrees 
     const xAngle = 1.274; // 73 degrees 
     const zTilt = Math.sin(i * 1.1) * 0.05; 
@@ -74,60 +72,49 @@ const generateScatteredTheater = (files: string[]) => {
 
 const TUNNEL_DATA = generateScatteredTheater(VIDEO_FILES);
 
-// --- FLASHBANG BACKGROUND & FOG CONTROLLER ---
-const ThemeController = () => {
-  const { scene } = useThree();
-  const bgColor = useMemo(() => new THREE.Color("#ffffff"), []);
+// --- THE EXACT SVG WIREFRAME FROM FRAMER ---
+const BackgroundWireframe = ({ isDark }: { isDark: boolean }) => (
+  <div style={{
+    position: 'absolute', inset: 0, zIndex: 0,
+    backgroundColor: isDark ? '#000000' : '#ffffff',
+    transition: 'background-color 0.1s', // Brutal, fast snap
+    display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden'
+  }}>
+    <svg 
+      viewBox="0 0 1516 832" 
+      preserveAspectRatio="xMidYMid slice" 
+      style={{ 
+        width: '100%', height: '100%', 
+        opacity: isDark ? 0.25 : 0, // Fades in when the screen turns black
+        transition: 'opacity 0.6s ease-in-out' 
+      }}
+    >
+      <g stroke="#ffffff" strokeWidth="1" fill="none">
+        <path d="M624.25 338.251h258.5v144.5h-258.5z"/>
+        <path d="M586.25 314.25h333.5v192.5h-333.5z"/>
+        <path d="M558.25 295.25h389.5v230.5h-389.5z"/>
+        <path d="M505.25 261.25h495.5v298.5h-495.5v-298.5Z"/>
+        <path d="M427.25 210.25h652.5v400.5h-652.5v-400.5Z"/>
+        <path d="M283.25 116.25h940.5v588.5h-940.5v-588.5Z"/>
+        <path d="M106.25 11.25h1230.5v808.5H106.25V11.25ZM723.5 482.5 543.778 830.884M723.5 338.672 543.778-9.712M674 483 337 829.496m337-491.324L337-8.324m544.499 490.823 536.111 348.497M881.499 338.673 1417.61-9.824M624.833 482.498 88.72 830.995m536.113-492.321L88.72-9.823M840 482.5l338.11 346.997M840 338.672 1178.11-8.325M793.5 483l179.722 347.884M793.5 338.171 973.222-9.712M758.249 830.999l.001-348.499m-.001-492.327.001 348.499M883 409.939h749.33m-1007.999-1H-125m1008-33.438 744.33-173m-1002.999 172-744.331-173m1003 249.5 747.83 133m-1006.498-134-747.831 133"/>
+      </g>
+    </svg>
+  </div>
+);
 
-  useFrame((state) => {
-    // Flashbang flip at 0.8 seconds
-    const isDark = state.clock.elapsedTime > 0.8;
+// --- DYNAMIC FOG CONTROLLER ---
+// Since the background is now HTML, the Canvas is transparent. We just sync the Fog color to match the HTML.
+const FogController = ({ isDark }: { isDark: boolean }) => {
+  const { scene } = useThree();
+  const fogColor = useMemo(() => new THREE.Color("#ffffff"), []);
+  
+  useFrame(() => {
     const targetColor = new THREE.Color(isDark ? "#000000" : "#ffffff");
-    
-    bgColor.lerp(targetColor, 0.1);
-    scene.background = bgColor;
-    
-    // Deep fog hides everything past the logo until you scroll
+    fogColor.lerp(targetColor, 0.1);
     if (!scene.fog) scene.fog = new THREE.Fog("#ffffff", 25, 60);
-    scene.fog.color.copy(bgColor);
+    scene.fog.color.copy(fogColor);
   });
   return null;
-};
-
-// --- FADING 3D GRID ROOM ---
-const TunnelRoom = () => {
-  const gridTexture = useMemo(() => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 256; canvas.height = 256;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0, 0, 256, 256);
-    }
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(1, 150); 
-    return tex;
-  }, []);
-
-  const matRefs = useRef<THREE.MeshBasicMaterial[]>([]);
-
-  useFrame((state) => {
-    const isDark = state.clock.elapsedTime > 0.8;
-    matRefs.current.forEach(mat => {
-      if (mat) mat.opacity = THREE.MathUtils.lerp(mat.opacity, isDark ? 0.15 : 0, 0.1);
-    });
-  });
-
-  return (
-    <group>
-      <mesh position={[-25, 0, -50]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial ref={(el) => (matRefs.current[0] = el as any)} map={gridTexture} transparent opacity={0} /></mesh>
-      <mesh position={[25, 0, -50]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[400, 40]} /><meshBasicMaterial ref={(el) => (matRefs.current[1] = el as any)} map={gridTexture} transparent opacity={0} /></mesh>
-      <mesh position={[0, -18, -50]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[50, 400]} /><meshBasicMaterial ref={(el) => (matRefs.current[2] = el as any)} map={gridTexture} transparent opacity={0} /></mesh>
-      <mesh position={[0, 18, -50]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[50, 400]} /><meshBasicMaterial ref={(el) => (matRefs.current[3] = el as any)} map={gridTexture} transparent opacity={0} /></mesh>
-    </group>
-  );
 };
 
 // --- EXPLODING VIDEO PLANE ---
@@ -139,7 +126,7 @@ const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index }: any) => {
   const finalPos = useMemo(() => new THREE.Vector3(...targetPos), [targetPos]);
   const finalScale = useMemo(() => new THREE.Vector3(targetScale[0], targetScale[1], 1), [targetScale]);
   
-  // Starting point: Shoved directly behind the logo at z=-20
+  // Videos hide directly behind the logo waiting to explode
   const startPos = useMemo(() => new THREE.Vector3(0, 0, -20), []);
   const startScale = useMemo(() => new THREE.Vector3(0, 0, 0), []);
 
@@ -159,7 +146,7 @@ const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index }: any) => {
         isInit.current = true;
       }
 
-      // Explosion trigger: Fires right after the screen goes black
+      // Explosion trigger: Fires right after the screen flashes to black
       const delay = 0.9 + (index * 0.03); 
       if (state.clock.elapsedTime > delay) {
         meshRef.current.position.lerp(finalPos, 0.08); 
@@ -211,13 +198,13 @@ const TextCheckpoints = () => {
 
   return (
     <group>
-      {/* 1. MASSIVE Center Logo (z = -20) */}
+      {/* MASSIVE Center Logo (Fixed Cropping Issue) */}
       <group position={[0, 0, -20]}>
         <Image ref={whiteLogoRef} scale={[22, 6.4]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#ffffff" />
         <Image ref={blackLogoRef} scale={[22, 6.4]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#000000" position={[0,0,0.01]} />
       </group>
 
-      {/* 2. Hidden Text 1 (Swallowed by Fog at z=-80 until you scroll) */}
+      {/* Hidden Text 1 */}
       <group position={[0, 0, -80]}>
         <Text fontSize={3} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">
           FEATURED WORK
@@ -227,7 +214,7 @@ const TextCheckpoints = () => {
         </Text>
       </group>
 
-      {/* 3. Hidden Text 2 (End of tunnel) */}
+      {/* Hidden Text 2 */}
       <group position={[0, 0, -130]}>
         <Text fontSize={3.5} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">
           OUR DIRECTORS
@@ -239,17 +226,27 @@ const TextCheckpoints = () => {
 
 export default function TunnelScene() {
   const navigate = useNavigate();
+  const [isDark, setIsDark] = useState(false);
+
+  // Trigger the flashbang sequence globally
+  useEffect(() => {
+    const timer = setTimeout(() => setIsDark(true), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
-      <Canvas gl={{ antialias: false, powerPreference: "high-performance" }} camera={{ fov: 85 }}>
+      
+      {/* The Authentic Framer SVG Wireframe Grid sitting securely in the background */}
+      <BackgroundWireframe isDark={isDark} />
+
+      {/* The transparent 3D Canvas sits on top of the wireframe */}
+      <Canvas style={{ position: 'absolute', inset: 0, zIndex: 1 }} gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }} camera={{ fov: 85 }}>
         <Suspense fallback={null}>
-          <ThemeController />
+          <FogController isDark={isDark} />
           <CameraController />
-          <TunnelRoom />
           <TextCheckpoints />
 
-          {/* Videos stagger-explode outward from behind the logo */}
           {TUNNEL_DATA.map((panel, i) => (
             <Float key={i} speed={0.8} rotationIntensity={0.02} floatIntensity={0.05}>
               <VideoPlane {...panel} index={i} />
