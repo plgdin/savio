@@ -26,49 +26,50 @@ const VIDEO_FILES = [
   "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
 ];
 
-// --- PURE MATH PERSPECTIVE (No Fake Walls) ---
+// --- STRICT MATH PERSPECTIVE (LOCKED TO GRID) ---
 const generateExplodingTheater = (files: string[]) => {
   return files.map((file, i) => {
-    const side = i % 4; // 0: Left, 1: Right, 2: Top, 3: Bottom
+    const side = i % 4; 
     
-    // Spread videos from in front of the camera down into the tunnel
-    const zPos = 5 - (i * 2); 
+    // Staggered depth distribution
+    const depthScatter = Math.sin(i * 11.3) * 2;
+    const zPos = 2 - (i * 3) + depthScatter; 
     
-    // WIDER Quarantine Zone to accommodate the massive logo
-    const boundX = 16;  
-    const boundY = 10;  
+    // Strict quarantine bounds to form the walls of the tunnel
+    const boundX = 15;
+    const boundY = 9.5;  
 
-    // Organic scatter so they don't form a boring grid
-    const scatter = (i % 3) * 5 - 5; 
+    // Organic scatter across the flat surface of the walls
+    const verticalScatter = Math.cos(i * 17.1) * 5;
+    const horizontalScatter = Math.sin(i * 23.4) * 6;
 
-    // The Exact Framer CSS Angles (Converted to Radians)
-    const rad55 = 55 * (Math.PI / 180);
-    const rad73 = 73 * (Math.PI / 180);
-    const zTilt = Math.sin(i) * 0.05; // Slight realistic tilt
+    // THE EXACT FRAMER ANGLES (Strictly locked, absolutely zero tilt deviation)
+    const rad55 = 0.9599; // 55 degrees 
+    const rad73 = 1.2740; // 73 degrees 
 
     let pos: [number, number, number] = [0, 0, 0];
     let rot: [number, number, number] = [0, 0, 0];
 
-    // Perfect 16:9 Aspect Ratio
+    // Perfect 16:9 Aspect Ratio scaling
     const w = 5 + (i % 3) * 1.2; 
     const h = w * 0.5625; 
     const targetScale: [number, number] = [w, h];
 
     if (side === 0) { // Left Wall
-      pos = [-boundX, scatter, zPos]; 
-      rot = [0, rad55, zTilt]; 
+      pos = [-boundX, verticalScatter, zPos];
+      rot = [0, rad55, 0]; 
     } 
     else if (side === 1) { // Right Wall
-      pos = [boundX, -scatter, zPos]; 
-      rot = [0, -rad55, -zTilt]; 
+      pos = [boundX, verticalScatter, zPos];
+      rot = [0, -rad55, 0]; 
     } 
     else if (side === 2) { // Top Ceiling
-      pos = [scatter * 1.5, boundY, zPos]; 
-      rot = [rad73, 0, zTilt]; 
+      pos = [horizontalScatter, boundY, zPos];
+      rot = [rad73, 0, 0]; 
     } 
     else { // Bottom Floor
-      pos = [-scatter * 1.5, -boundY, zPos]; 
-      rot = [-rad73, 0, -zTilt]; 
+      pos = [horizontalScatter, -boundY, zPos];
+      rot = [-rad73, 0, 0]; 
     }
 
     return { url: `/${file}`, pos, rot, targetScale };
@@ -77,12 +78,12 @@ const generateExplodingTheater = (files: string[]) => {
 
 const TUNNEL_DATA = generateExplodingTheater(VIDEO_FILES);
 
-// --- THE EXACT SVG WIREFRAME FROM FRAMER ---
+// --- THE EXACT SVG WIREFRAME (Dimmed Opacity) ---
 const BackgroundWireframe = ({ isDark }: { isDark: boolean }) => (
   <div style={{
     position: 'absolute', inset: 0, zIndex: 0,
     backgroundColor: isDark ? '#000000' : '#ffffff',
-    transition: 'background-color 0.1s', // Lightning fast snap
+    transition: 'background-color 0.1s', 
     display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden'
   }}>
     <svg 
@@ -90,11 +91,12 @@ const BackgroundWireframe = ({ isDark }: { isDark: boolean }) => (
       preserveAspectRatio="xMidYMid slice" 
       style={{ 
         width: '100%', height: '100%', 
-        opacity: isDark ? 0.25 : 0, // Fades in smoothly right as the background snaps to black
+        // Opacity severely reduced to 0.06 to act as a subtle HUD
+        opacity: isDark ? 0.06 : 0, 
         transition: 'opacity 0.6s ease-in-out' 
       }}
     >
-      <g stroke="#ffffff" strokeWidth="1" fill="none">
+      <g stroke="#ffffff" strokeWidth="1.5" fill="none">
         <path d="M624.25 338.251h258.5v144.5h-258.5z"/>
         <path d="M586.25 314.25h333.5v192.5h-333.5z"/>
         <path d="M558.25 295.25h389.5v230.5h-389.5z"/>
@@ -115,8 +117,6 @@ const FogController = ({ isDark }: { isDark: boolean }) => {
   useFrame(() => {
     const targetColor = new THREE.Color(isDark ? "#000000" : "#ffffff");
     fogColor.lerp(targetColor, 0.1);
-    
-    // Density set to 75. Deep text is 100% hidden until you scroll inward.
     if (!scene.fog) scene.fog = new THREE.Fog("#ffffff", 25, 75);
     scene.fog.color.copy(fogColor);
   });
@@ -131,8 +131,7 @@ const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index }: any) => {
   
   const finalPos = useMemo(() => new THREE.Vector3(...targetPos), [targetPos]);
   const finalScale = useMemo(() => new THREE.Vector3(targetScale[0], targetScale[1], 1), [targetScale]);
-  
-  // Starting point: Hidden directly inside/behind the central logo
+
   const startPos = useMemo(() => new THREE.Vector3(0, 0, -20), []);
   const startScale = useMemo(() => new THREE.Vector3(0, 0, 0), []);
 
@@ -152,11 +151,10 @@ const VideoPlane = ({ url, pos: targetPos, rot, targetScale, index }: any) => {
         isInit.current = true;
       }
 
-      // The Explosion: Fires 0.9s after load (right after screen turns black)
       const delay = 0.9 + (index * 0.03); 
       if (state.clock.elapsedTime > delay) {
-        meshRef.current.position.lerp(finalPos, 0.08); // Blasts outward
-        meshRef.current.scale.lerp(finalScale, 0.08);  // Scales to 16:9 target
+        meshRef.current.position.lerp(finalPos, 0.08);
+        meshRef.current.scale.lerp(finalScale, 0.08);  
       }
     }
   });
@@ -177,7 +175,6 @@ const CameraController = () => {
   useEffect(() => {
     camera.position.set(0, 0, 8); 
     const handleWheel = (e: WheelEvent) => {
-      // Allows deep scrolling past the logo
       targetZ.current = Math.max(-150, Math.min(10, targetZ.current - e.deltaY * 0.08));
     };
     window.addEventListener("wheel", handleWheel, { passive: true });
@@ -197,7 +194,6 @@ const TextCheckpoints = () => {
 
   useFrame((state) => {
     const isDark = state.clock.elapsedTime > 0.8;
-    // Crossfades the SVG colors when the background flashes
     if (whiteLogoRef.current && blackLogoRef.current) {
       (whiteLogoRef.current.material as THREE.Material).opacity = THREE.MathUtils.lerp((whiteLogoRef.current.material as THREE.Material).opacity, isDark ? 1 : 0, 0.2);
       (blackLogoRef.current.material as THREE.Material).opacity = THREE.MathUtils.lerp((blackLogoRef.current.material as THREE.Material).opacity, isDark ? 0 : 1, 0.2);
@@ -206,13 +202,11 @@ const TextCheckpoints = () => {
 
   return (
     <group>
-      {/* 1. MASSIVE Center Logo. STRICT 3.44:1 Aspect Ratio to prevent cropping. */}
       <group position={[0, 0, -20]}>
         <Image ref={whiteLogoRef} scale={[24, 7]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#ffffff" />
         <Image ref={blackLogoRef} scale={[24, 7]} url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" transparent toneMapped={false} color="#000000" position={[0,0,0.01]} />
       </group>
 
-      {/* 2. Hidden Text 1 (Completely invisible due to fog until you scroll) */}
       <group position={[0, 0, -85]}>
         <Text fontSize={3} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">
           FEATURED WORK
@@ -222,7 +216,6 @@ const TextCheckpoints = () => {
         </Text>
       </group>
 
-      {/* 3. Hidden Text 2 */}
       <group position={[0, 0, -140]}>
         <Text fontSize={3.5} color="#ffffff" fontWeight={900} letterSpacing={0.1} anchorX="center" anchorY="middle">
           OUR DIRECTORS
@@ -236,7 +229,6 @@ export default function TunnelScene() {
   const navigate = useNavigate();
   const [isDark, setIsDark] = useState(false);
 
-  // Trigger the flashbang sequence
   useEffect(() => {
     const timer = setTimeout(() => setIsDark(true), 800);
     return () => clearTimeout(timer);
@@ -245,7 +237,7 @@ export default function TunnelScene() {
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       
-      {/* Authentic Framer Wireframe (Pure CSS/SVG) */}
+      {/* Authentic Framer Wireframe (Dimmed Opacity) */}
       <BackgroundWireframe isDark={isDark} />
 
       {/* Transparent 3D Canvas */}
@@ -255,9 +247,9 @@ export default function TunnelScene() {
           <CameraController />
           <TextCheckpoints />
 
-          {/* Videos burst out from behind the logo */}
+          {/* Videos with 0 rotationIntensity so they stay permanently flat against the grid */}
           {TUNNEL_DATA.map((panel, i) => (
-            <Float key={i} speed={0.8} rotationIntensity={0.02} floatIntensity={0.05}>
+            <Float key={i} speed={1.5} rotationIntensity={0} floatIntensity={0.05}>
               <VideoPlane {...panel} index={i} />
             </Float>
           ))}
