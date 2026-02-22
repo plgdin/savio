@@ -11,8 +11,6 @@ const Layout = () => {
     return <Outlet />;
   }
 
-  // ... (Keep your previous Button logic here: buttonText, buttonAction, etc.) ...
-  // Re-pasting logic for clarity:
   let buttonText = "MENU";
   let buttonAction = () => navigate('/menu');
   if (location.pathname.startsWith('/project/')) {
@@ -51,13 +49,7 @@ const Layout = () => {
         </button>
       </div>
 
-      {/* 5. Logo */}
-      <div style={{
-        position: 'fixed', top: '30px', left: '50%', 
-        transform: 'translateX(-50%)', zIndex: 50, mixBlendMode: 'difference'
-      }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 900, margin: 0, color: 'white' }}>PANORAMA</h1>
-      </div>
+      {/* Removed Section 5: The extra "PANORAMA" text logo is now gone! */}
     </>
   );
 };
