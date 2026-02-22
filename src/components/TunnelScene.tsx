@@ -1,10 +1,10 @@
 import React, { Suspense, useEffect, useRef, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Text, Float, useVideoTexture, Image } from "@react-three/drei"; // <-- Image imported here
+import { Float, useVideoTexture, Image } from "@react-three/drei"; // Text removed, no more double FILMS
 import * as THREE from "three";
 import { useNavigate } from "react-router-dom"; 
 
-// --- DYNAMIC CONFIG: ALL 18 VIDEOS ---
+// --- DYNAMIC CONFIG: 18 VIDEOS ---
 const VIDEO_FILES = [
   "vid1.mp4",
   "WhatsApp Video 2026-02-21 at 3.00.26 PM.mp4",
@@ -26,54 +26,58 @@ const VIDEO_FILES = [
   "WhatsApp Video 2026-02-21 at 3.00.35 PM.mp4"
 ];
 
-// --- "CONTROLLED CHAOS" GENERATOR (Matches Framer Screenshot) ---
-const generatePseudoRandomPanels = (files: string[]) => {
+// --- "THEATER TUNNEL" ALGORITHM ---
+const generateTheaterPanels = (files: string[]) => {
   return files.map((file, i) => {
-    const side = i % 4; 
+    const side = i % 4; // 0: Left, 1: Right, 2: Top, 3: Bottom
     
-    // Z-Depth: Pushes back steadily, bumps organically
-    const zPos = -8 - (i * 4.5) + (Math.sin(i * 14.3) * 3.5); 
+    // Spread videos continuously down the tunnel, wrapping past the logo
+    const zPos = 2 - (i * 2.5);
 
-    // X/Y Offsets: Creates the scattered collage look
-    const xOffset = Math.sin(i * 2.7) * 2.5; 
-    const yOffset = Math.cos(i * 3.1) * 2.0;
+    // STRICT HOLLOW CENTER: Pushes videos far out to the edges
+    const xDist = 9.5 + (i % 3) * 1.5; // Distances: 9.5, 11, 12.5
+    const yDist = 6.5 + (i % 2) * 1.5; // Distances: 6.5, 8.0
 
-    // The Framer Angle: ~35 degrees (0.6 rad) inward
-    const baseAngle = 0.6 + (Math.sin(i * 5.5) * 0.15); 
-    const zTilt = Math.sin(i * 7.2) * 0.1; 
+    // Organic scatter along the walls so they don't form perfect grids
+    const xScatter = Math.sin(i * 2.2) * 6; // Slides Top/Bottom panels horizontally
+    const yScatter = Math.cos(i * 3.1) * 4; // Slides Left/Right panels vertically
+
+    // The Framer Angle: ~34 degrees (0.6 rad) inward toward the viewer
+    const angle = 0.6; 
+    const zTilt = Math.sin(i * 1.5) * 0.05; // Tiny natural rotation
 
     let pos: [number, number, number] = [0, 0, 0];
     let rot: [number, number, number] = [0, 0, 0];
 
-    // Scale: Varies size but strictly locks 16:9 ratio
-    const width = 5.5 + (Math.sin(i * 8.4) * 1.2);
-    const height = width * 0.56; 
-    const scale: [number, number] = [width, height];
+    // Perfect 16:9 Aspect Ratio enforcement
+    const w = 5.5 + (i % 3); 
+    const h = w * 0.5625; 
+    const scale: [number, number] = [w, h];
 
     if (side === 0) { // Left Wall
-      pos = [-8.5 + xOffset, yOffset, zPos]; 
-      rot = [0, baseAngle, zTilt]; 
+      pos = [-xDist, yScatter, zPos]; 
+      rot = [0, angle, zTilt]; 
     } 
     else if (side === 1) { // Right Wall
-      pos = [8.5 + xOffset, yOffset, zPos]; 
-      rot = [0, -baseAngle, -zTilt]; 
+      pos = [xDist, yScatter, zPos]; 
+      rot = [0, -angle, -zTilt]; 
     } 
-    else if (side === 2) { // Ceiling
-      pos = [xOffset, 6.5 + yOffset, zPos]; 
-      rot = [baseAngle, 0, zTilt]; 
+    else if (side === 2) { // Top Ceiling
+      pos = [xScatter, yDist, zPos]; 
+      rot = [angle, 0, zTilt]; 
     } 
-    else { // Floor
-      pos = [xOffset, -6.5 + yOffset, zPos]; 
-      rot = [-baseAngle, 0, -zTilt]; 
+    else { // Bottom Floor
+      pos = [xScatter, -yDist, zPos]; 
+      rot = [-angle, 0, -zTilt]; 
     }
 
     return { url: `/${file}`, pos, rot, scale };
   });
 };
 
-const TUNNEL_DATA = generatePseudoRandomPanels(VIDEO_FILES);
+const TUNNEL_DATA = generateTheaterPanels(VIDEO_FILES);
 
-// --- 3D GRID BACKGROUND ---
+// --- 3D GRID ROOM (The Theater Box) ---
 const TunnelRoom = () => {
   const gridTexture = useMemo(() => {
     const canvas = document.createElement("canvas");
@@ -92,10 +96,11 @@ const TunnelRoom = () => {
 
   return (
     <group>
-      <mesh position={[-14, 0, -100]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[250, 30]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.2} /></mesh>
-      <mesh position={[14, 0, -100]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[250, 30]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.2} /></mesh>
-      <mesh position={[0, -10, -100]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[28, 250]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.2} /></mesh>
-      <mesh position={[0, 10, -100]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[28, 250]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.2} /></mesh>
+      {/* Pushed the walls out wider to accommodate the outer screens */}
+      <mesh position={[-20, 0, -100]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[300, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[20, 0, -100]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[300, 40]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[0, -14, -100]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[40, 300]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
+      <mesh position={[0, 14, -100]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[40, 300]} /><meshBasicMaterial map={gridTexture} transparent opacity={0.15} /></mesh>
     </group>
   );
 };
@@ -104,7 +109,6 @@ const TunnelRoom = () => {
 const VideoPlane = ({ url, pos, rot, scale }: any) => {
   const texture = useVideoTexture(url, { crossOrigin: "Anonymous" });
   
-  // Stops WebGL from crashing your GPU
   useEffect(() => {
     if (texture) {
       texture.generateMipmaps = false;
@@ -122,13 +126,14 @@ const VideoPlane = ({ url, pos, rot, scale }: any) => {
 };
 
 const CameraController = () => {
-  const targetZ = useRef(4); 
+  const targetZ = useRef(5); // Starts slightly pulled back
   const { camera } = useThree();
 
   useEffect(() => {
-    camera.position.set(0, 0, -15);
+    camera.position.set(0, 0, 5);
     const handleWheel = (e: WheelEvent) => {
-      targetZ.current = Math.max(-200, Math.min(8, targetZ.current - e.deltaY * 0.06));
+      // Allows scrolling deep past the logo
+      targetZ.current = Math.max(-45, Math.min(8, targetZ.current - e.deltaY * 0.06));
     };
     window.addEventListener("wheel", handleWheel, { passive: true });
     return () => window.removeEventListener("wheel", handleWheel);
@@ -140,33 +145,21 @@ const CameraController = () => {
   return null;
 };
 
-// --- EXACT FRAMER SVG LOGO ---
+// --- THE LOGO AT THE END OF THE TUNNEL ---
 const CentralLogo = () => (
-  <group position={[0, 0, -4]}>
-    {/* The broken stencil SVG pulled directly from Framer */}
+  // Sits cleanly in the middle at z = -20
+  <group position={[0, 0, -20]}>
     <Image 
       url="https://framerusercontent.com/images/yltEkL6pigoc9lHJn4DWokbQfQ.svg" 
-      scale={[8, 2.5]} 
+      scale={[13, 3.8]} // Corrected aspect ratio to stop the squished look
       transparent
       toneMapped={false} 
     />
-    
-    <Text 
-      fontSize={0.25} 
-      position={[0, -1.6, 0]} 
-      color="#ffffff" 
-      letterSpacing={0.6}
-      anchorX="center" 
-      anchorY="middle"
-      fontWeight={800}
-    >
-      FILMS
-    </Text>
   </group>
 );
 
 export default function TunnelScene() {
-  const navigate = useNavigate(); // <-- ROUTER HOOK
+  const navigate = useNavigate();
 
   return (
     <div style={{ width: "100vw", height: "100vh", background: "#000", position: "relative", overflow: "hidden" }}>
@@ -176,18 +169,17 @@ export default function TunnelScene() {
           <TunnelRoom />
           <CentralLogo />
 
-          {/* Render the math-based staggered panels */}
+          {/* Render the hollow theater panels */}
           {TUNNEL_DATA.map((panel, i) => (
-            <Float key={i} speed={0.8} rotationIntensity={0.05} floatIntensity={0.1}>
+            <Float key={i} speed={0.8} rotationIntensity={0.03} floatIntensity={0.05}>
               <VideoPlane {...panel} />
             </Float>
           ))}
           
-          <fog attach="fog" args={["#000", 25, 180]} />
+          <fog attach="fog" args={["#000", 25, 200]} />
         </Suspense>
       </Canvas>
 
-      {/* WIRED MENU BUTTON */}
       <div style={{ position: 'absolute', bottom: '30px', left: '50%', transform: 'translateX(-50%)', zIndex: 100 }}>
         <button 
           onClick={() => navigate('/menu')} 
