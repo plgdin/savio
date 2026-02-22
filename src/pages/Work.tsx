@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Array re-ordered to perfectly match your screenshot
 const projects = [
   { id: '01', client: 'ZERO', title: 'SKATE OR DIE', img: '/izesDIIpVhRGHCepu9trdoAcd3k.png' },
   { id: '02', client: 'FENDER', title: 'BASSMAN', img: '/yBbkSWTAYb0ypoJGjlA2nd4nYo.png' }, 
-  { id: '03', client: 'NIKE', title: 'JOGA BONITO 2.0', img: '/ZyoY9VgUJdJie8Sx25XTCdFTSo.png' }, 
   { id: '04', client: 'REDBULL', title: 'COME RAIN OR SHINE', img: '/5AKYYKaUteYI46sSADeXMib3U.png' },
   { id: '05', client: 'EVERLAST', title: 'UNLEASH YOUR POWER', img: '/Jqd0S2le6Funti3d4TXTNELNvas.png' },
+  { id: '03', client: 'NIKE', title: 'JOGA BONITO 2.0', img: '/ZyoY9VgUJdJie8Sx25XTCdFTSo.png' }, 
   { id: '06', client: 'SPOTIFY', title: 'TURN UP THE INNER VOLUME', img: '/tQGnSHEHpZp1oU9HEMAg8VfnQ.png' },
   { id: '07', client: 'BENTLEY', title: 'THE SANDMAN', img: '/8DmVo4XWdc66i5r7z2Pf9ct9NlA.png' },
   { id: '08', client: 'RIP CURL', title: 'SWIMMING WITH SHARKS', img: '/hcb6oWFIslUb9NML4hXg6gCajj4.png' },
@@ -50,41 +51,42 @@ const ProjectRow = ({ project }: { project: any }) => {
         }}
       >
         
-        {/* Texts Container */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', zIndex: 5 }}>
+        {/* Texts Container (Exact gap of 14px between Client and Title) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', zIndex: 5 }}>
           
           {/* CLIENT NAME: Slides UP on hover */}
-          <div style={{ height: '40px', overflow: 'hidden', position: 'relative' }}>
+          <div style={{ height: '38px', overflow: 'hidden', position: 'relative' }}>
             <motion.div 
               animate={{ y: isHovered ? '-50%' : '0%' }} 
               transition={{ duration: 0.4, ease: framerEase }}
               style={{ display: 'flex', flexDirection: 'column' }}
             >
               {/* Normal State (White) */}
-              <span style={{ fontFamily: '"Panchang", sans-serif', fontSize: '36px', fontWeight: 300, color: '#fff', height: '40px', display: 'flex', alignItems: 'center' }}>
+              <span style={{ fontFamily: '"Panchang", sans-serif', fontSize: '32px', fontWeight: 300, color: '#fff', height: '38px', display: 'flex', alignItems: 'center' }}>
                 {project.client}
               </span>
               {/* Hover State (Black) */}
-              <span style={{ fontFamily: '"Panchang", sans-serif', fontSize: '36px', fontWeight: 300, color: '#000', height: '40px', display: 'flex', alignItems: 'center' }}>
+              <span style={{ fontFamily: '"Panchang", sans-serif', fontSize: '32px', fontWeight: 300, color: '#000', height: '38px', display: 'flex', alignItems: 'center' }}>
                 {project.client}
               </span>
             </motion.div>
           </div>
 
           {/* PROJECT TITLE: Slides DOWN on hover */}
-          <div style={{ height: '40px', overflow: 'hidden', position: 'relative' }}>
+          {/* Removed letterSpacing to make the words tight and perfectly aligned like Framer */}
+          <div style={{ height: '38px', overflow: 'hidden', position: 'relative' }}>
             <motion.div 
               initial={{ y: '-50%' }} // Start offset so it can slide down into the 0% position
               animate={{ y: isHovered ? '0%' : '-50%' }} 
-              transition={{ duration: 0.4, ease: framerEase }}
+              transition={{ duration: 0.4, ease: framerEase, delay: 0.02 }}
               style={{ display: 'flex', flexDirection: 'column' }}
             >
                {/* Hover State (Black) - Needs to be on top for downward slide */}
-              <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '36px', fontWeight: 400, color: '#000', height: '40px', display: 'flex', alignItems: 'center', letterSpacing: '1px' }}>
+              <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '32px', fontWeight: 400, color: '#000', height: '38px', display: 'flex', alignItems: 'center' }}>
                 {project.title}
               </span>
               {/* Normal State (White) - Sits at the bottom initially */}
-              <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '36px', fontWeight: 400, color: '#fff', height: '40px', display: 'flex', alignItems: 'center', letterSpacing: '1px' }}>
+              <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '32px', fontWeight: 400, color: '#fff', height: '38px', display: 'flex', alignItems: 'center' }}>
                 {project.title}
               </span>
             </motion.div>
@@ -99,11 +101,13 @@ const ProjectRow = ({ project }: { project: any }) => {
               transition={{ duration: 0.4, ease: framerEase }}
               style={{ display: 'flex', flexDirection: 'column', height: '88px' }}
           >
+              {/* Normal State (Grey) */}
               <svg width="44" height="44" viewBox="0 0 44 44" fill="none" style={{ flexShrink: 0 }}>
-                <path d="M0.723 0.956H42.635M42.635 0.956V42.87M42.635 0.956L4.956 38.635" stroke="#9A9A9A" strokeWidth="2" strokeLinecap="square"/>
+                <path d="M0.723 0.956H42.635M42.635 0.956V42.87M42.635 0.956L4.956 38.635" stroke="#9A9A9A" strokeLinecap="square"/>
               </svg>
+              {/* Hover State (Black) */}
               <svg width="44" height="44" viewBox="0 0 44 44" fill="none" style={{ flexShrink: 0 }}>
-                <path d="M0.723 0.956H42.635M42.635 0.956V42.87M42.635 0.956L4.956 38.635" stroke="#000000" strokeWidth="2" strokeLinecap="square"/>
+                <path d="M0.723 0.956H42.635M42.635 0.956V42.87M42.635 0.956L4.956 38.635" stroke="#000000" strokeLinecap="square"/>
               </svg>
           </motion.div>
         </div>
@@ -172,7 +176,7 @@ export default function WorkList() {
           alt="Panorama Films" 
           style={{ width: '142px', filter: 'brightness(0) invert(1)' }} 
         />
-        <p style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', color: '#8F8F8F', margin: '40px 0 0 0', letterSpacing: '1px' }}>
+        <p style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '20px', color: '#8F8F8F', margin: '40px 0 0 0' }}>
           WORK
         </p>
       </div>

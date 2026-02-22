@@ -9,15 +9,14 @@ import React from 'react';
 function App() {
   return (
     <BrowserRouter>
-      {/* GLOBAL OVERLAYS: These sit behind/above everything on every page */}
+      {/* 1. We keep the grid, but REMOVED the noise-overlay line from here */}
       <div className="framer-grid" />
-      <div className="noise-overlay" />
 
       <Routes>
-        {/* STANDALONE ROUTE: No global Layout. This lets the 3D Tunnel own the whole screen. */}
+        {/* STANDALONE ROUTE */}
         <Route path="/" element={<Home />} />
 
-        {/* NESTED ROUTES: These pages will still get the global navbar and footer from Layout */}
+        {/* NESTED ROUTES */}
         <Route element={<Layout />}>
           <Route path="/menu" element={<Menu />} />
           <Route path="/work" element={<WorkList />} />
