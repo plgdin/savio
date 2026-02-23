@@ -1,7 +1,7 @@
-import React, { Suspense, useEffect, useRef, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
-import { motion, useMotionValue, useSpring } from "framer-motion";
+import { motion } from "framer-motion";
 import * as THREE from "three";
 import { useNavigate } from "react-router-dom";
 
@@ -28,50 +28,6 @@ const VIDEO_FILES = [
 ];
 
 const framerEase: [number, number, number, number] = [0.44, 0, 0.56, 1];
-
-// --- CUSTOM CURSOR COMPONENT ---
-const CustomCursor = () => {
-  const cursorX = useMotionValue(-100);
-  const cursorY = useMotionValue(-100);
-  
-  const springConfig = { damping: 20, stiffness: 700, mass: 0.1 };
-  const cursorXSpring = useSpring(cursorX, springConfig);
-  const cursorYSpring = useSpring(cursorY, springConfig);
-
-  useEffect(() => {
-    document.body.style.cursor = 'none'; 
-    const moveCursor = (e: MouseEvent) => {
-      cursorX.set(e.clientX);
-      cursorY.set(e.clientY);
-    };
-    window.addEventListener("mousemove", moveCursor);
-    return () => {
-      document.body.style.cursor = 'auto'; 
-      window.removeEventListener("mousemove", moveCursor);
-    };
-  }, [cursorX, cursorY]);
-
-  return (
-    <motion.div
-      style={{
-        position: "fixed",
-        left: 0,
-        top: 0,
-        x: cursorXSpring,
-        y: cursorYSpring,
-        translateX: "-50%",
-        translateY: "-50%",
-        width: "14px",
-        height: "14px",
-        backgroundColor: "#ffffff",
-        borderRadius: "50%",
-        pointerEvents: "none",
-        zIndex: 99999,
-        mixBlendMode: "difference",
-      }}
-    />
-  );
-};
 
 // --- 2D BACKGROUND GRID ---
 const BackgroundWireframe = ({ isDark }: { isDark: boolean }) => (
@@ -318,7 +274,7 @@ export default function TunnelScene() {
         backgroundColor: isDark ? "#000" : "#fff",
       }}
     >
-      <CustomCursor />
+      {/* NO CustomCursor here - Handled by Layout */}
       
       <BackgroundWireframe isDark={isDark} />
 
@@ -336,14 +292,11 @@ export default function TunnelScene() {
 
       <CSSVideoWalls scale={scale} scrollZ={scrollZ} isDark={isDark} />
 
-      {/* Fog Overlay */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 5,
         background: 'radial-gradient(circle at center, transparent 20%, #000 95%)',
         opacity: isDark ? 0.9 : 0, transition: 'opacity 1s ease'
       }} />
-
-      {/* THE LOCAL BUTTON WAS REMOVED FROM HERE TO PREVENT OVERLAPPING */}
     </div>
   );
 }
