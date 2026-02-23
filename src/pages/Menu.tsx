@@ -13,7 +13,10 @@ const framerEase = [0.44, 0, 0.56, 1];
 
 const MenuItem = ({ item }: { item: typeof menuItems[0] }) => {
   const location = useLocation();
-  const isActive = location.pathname === item.path;
+  
+  // Improved logic to ensure path matching is exact
+  const isActive = location.pathname === item.path || 
+                   (location.pathname === "" && item.path === "/");
 
   return (
     <Link 
@@ -22,12 +25,14 @@ const MenuItem = ({ item }: { item: typeof menuItems[0] }) => {
     >
       <motion.div
         initial="initial"
+        // Force the rotated variant if the page is active
+        animate={isActive ? "hover" : "initial"}
         whileHover="hover"
         style={{
           position: 'relative',
-          height: '88px', // Exact font-size height
+          height: '88px', 
           cursor: 'pointer',
-          perspective: '1200px', // Increased for better 3D depth
+          perspective: '1200px', 
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
@@ -49,7 +54,7 @@ const MenuItem = ({ item }: { item: typeof menuItems[0] }) => {
             height: '100%',
           }}
         >
-          {/* FRONT FACE (Normal State) */}
+          {/* FRONT FACE (Default State) */}
           <motion.div
             style={{
               position: 'absolute',
@@ -59,7 +64,7 @@ const MenuItem = ({ item }: { item: typeof menuItems[0] }) => {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              transform: 'translateZ(44px)', // Half of height to center the rotation axis
+              transform: 'translateZ(44px)', 
             }}
           >
             <h1
@@ -69,14 +74,14 @@ const MenuItem = ({ item }: { item: typeof menuItems[0] }) => {
                 fontWeight: 700,
                 margin: 0,
                 lineHeight: '0.8em',
-                color: isActive ? 'rgb(209, 209, 209)' : '#000000',
+                color: '#000000', 
               }}
             >
               {item.label}
             </h1>
           </motion.div>
 
-          {/* TOP FACE (Revealed on Hover) */}
+          {/* TOP FACE (Active/Hover State) */}
           <motion.div
             style={{
               position: 'absolute',
@@ -86,7 +91,6 @@ const MenuItem = ({ item }: { item: typeof menuItems[0] }) => {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              // Positioned 90 degrees on top, pushed back in Z space
               transform: 'rotateX(90deg) translateZ(44px)', 
             }}
           >
@@ -97,7 +101,7 @@ const MenuItem = ({ item }: { item: typeof menuItems[0] }) => {
                 fontWeight: 700,
                 margin: 0,
                 lineHeight: '0.8em',
-                color: 'rgb(209, 209, 209)',
+                color: 'rgb(209, 209, 209)', // Specific gray from source
               }}
             >
               {item.label}
@@ -125,23 +129,20 @@ export default function Menu() {
         position: 'fixed',
         top: 0,
         left: 0,
-        zIndex: 1000,
+        zIndex: 20000, // Ensure it's above Layout logic
       }}
     >
-      {/* 1. TOP RIGHT ICONS */}
       <div style={{ position: 'absolute', top: '40px', right: '40px', display: 'flex', gap: '15px', zIndex: 10 }}>
-        <div style={{ width: '40px', height: '40px', border: '1px solid #ddd', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', fontFamily: 'Inter', fontSize: '14px' }}>𝕏</div>
-        <div style={{ width: '40px', height: '40px', border: '1px solid #ddd', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', fontFamily: 'Inter', fontSize: '14px' }}>IG</div>
+        <div style={iconStyle}>𝕏</div>
+        <div style={iconStyle}>IG</div>
       </div>
 
-      {/* 2. MENU LIST */}
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0px' }}>
         {menuItems.map((item) => (
           <MenuItem key={item.label} item={item} />
         ))}
       </div>
 
-      {/* 3. CLOSE BUTTON */}
       <div style={{ position: 'absolute', bottom: '56px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
         <button
           onClick={() => navigate(-1)}
@@ -162,8 +163,20 @@ export default function Menu() {
         </button>
       </div>
       
-      {/* 4. BACKGROUND GRID */}
       <div className="framer-grid" style={{ opacity: 0.05, zIndex: 0 }} />
     </div>
   );
 }
+
+const iconStyle: React.CSSProperties = {
+  width: '40px', 
+  height: '40px', 
+  border: '1px solid #ddd', 
+  borderRadius: '50%', 
+  display: 'flex', 
+  justifyContent: 'center', 
+  alignItems: 'center', 
+  cursor: 'pointer', 
+  fontFamily: 'Inter', 
+  fontSize: '14px'
+};

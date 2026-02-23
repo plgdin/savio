@@ -30,25 +30,23 @@ const VIDEO_FILES = [
 const framerEase: [number, number, number, number] = [0.44, 0, 0.56, 1];
 
 // --- CUSTOM CURSOR COMPONENT ---
-// Matches the exact white dot from your screenshots with premium Framer physics
 const CustomCursor = () => {
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
   
-  // Tightened physics: Less floaty, more responsive, snappier tracking
   const springConfig = { damping: 20, stiffness: 700, mass: 0.1 };
   const cursorXSpring = useSpring(cursorX, springConfig);
   const cursorYSpring = useSpring(cursorY, springConfig);
 
   useEffect(() => {
-    document.body.style.cursor = 'none'; // Hide native cursor globally
+    document.body.style.cursor = 'none'; 
     const moveCursor = (e: MouseEvent) => {
       cursorX.set(e.clientX);
       cursorY.set(e.clientY);
     };
     window.addEventListener("mousemove", moveCursor);
     return () => {
-      document.body.style.cursor = 'auto'; // Restore on unmount
+      document.body.style.cursor = 'auto'; 
       window.removeEventListener("mousemove", moveCursor);
     };
   }, [cursorX, cursorY]);
@@ -63,13 +61,13 @@ const CustomCursor = () => {
         y: cursorYSpring,
         translateX: "-50%",
         translateY: "-50%",
-        width: "14px", // Perfect small dot size from your screenshot
+        width: "14px",
         height: "14px",
         backgroundColor: "#ffffff",
         borderRadius: "50%",
         pointerEvents: "none",
-        zIndex: 99999, // Guarantees it is always on top of EVERYTHING
-        mixBlendMode: "difference", // Ensures it stays visible even if hovering over white text/videos
+        zIndex: 99999,
+        mixBlendMode: "difference",
       }}
     />
   );
@@ -88,6 +86,7 @@ const BackgroundWireframe = ({ isDark }: { isDark: boolean }) => (
       justifyContent: "center",
       alignItems: "center",
       overflow: "hidden",
+      pointerEvents: 'none'
     }}
   >
     <svg
@@ -281,7 +280,6 @@ const CSSVideoWalls = ({ scale, scrollZ, isDark }: { scale: number; scrollZ: num
 
 // --- MAIN SCENE ---
 export default function TunnelScene() {
-  const navigate = useNavigate();
   const [isDark, setIsDark] = useState(false);
   const [scale, setScale] = useState(1);
   const [scrollZ, setScrollZ] = useState(0);
@@ -325,7 +323,7 @@ export default function TunnelScene() {
       <BackgroundWireframe isDark={isDark} />
 
       <Canvas
-        style={{ position: "absolute", inset: 0, zIndex: 1 }}
+        style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: 'none' }}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         camera={{ fov: 75 }}
       >
@@ -345,36 +343,7 @@ export default function TunnelScene() {
         opacity: isDark ? 0.9 : 0, transition: 'opacity 1s ease'
       }} />
 
-      <div
-        style={{
-          position: "absolute",
-          bottom: "30px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 100,
-        }}
-      >
-        <button
-          onClick={() => {
-            document.body.style.cursor = 'auto'; // Reset cursor before leaving
-            navigate("/menu");
-          }}
-          style={{
-            padding: "12px 45px",
-            borderRadius: "88px",
-            border: "none",
-            backgroundColor: "white",
-            color: "black",
-            fontWeight: "900",
-            cursor: "none", // Hide default cursor over button
-            fontSize: "12px",
-            letterSpacing: "2px",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
-          }}
-        >
-          MENU
-        </button>
-      </div>
+      {/* THE LOCAL BUTTON WAS REMOVED FROM HERE TO PREVENT OVERLAPPING */}
     </div>
   );
 }

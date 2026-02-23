@@ -1,11 +1,10 @@
-import TunnelScene from '../components/TunnelScene'; // Import the 3D code
+import TunnelScene from '../components/TunnelScene'; 
 import React from 'react';
 
 export default function Home() {
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'fixed', inset: 0 }}>
+    <div style={{ width: '100%', height: '100vh', position: 'relative' }}>
        <TunnelScene />
-       {/* You can overlay text here if needed, but the scene has it */}
     </div>
   );
 }
