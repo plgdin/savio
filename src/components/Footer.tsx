@@ -46,7 +46,7 @@ const Footer = () => {
               <p style={marqueeText}>
                 Panorama <span style={{ fontFamily: '"Panchang", sans-serif' }}>FILMES   </span>
                 CRAFTED BY ANDRÉ LACERDA
-                <span style={{ fontFamily: '"Panchang", sans-serif' }}>   FRAMER TEMPLATE   </span>
+                <span style={{ fontFamily: '"Panchang", sans-serif' }}>   PLGDIN TEMPLATE   </span>
               </p>
             </div>
           ))}
