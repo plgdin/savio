@@ -35,7 +35,9 @@ const ScrollHighlight = ({ text }: { text: string }) => {
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start 0.9", "end 0.2"] 
+    // CHANGED: "start 0.9" triggers almost as soon as it enters. 
+    // "end 0.3" means it won't finish highlighting until the paragraph is high up the screen.
+    offset: ["start 0.9", "end 0.3"] 
   });
 
   const words = text.split(" ");
@@ -54,6 +56,7 @@ const ScrollHighlight = ({ text }: { text: string }) => {
       {words.map((word, i) => {
         const start = i / words.length;
         const end = (i + 1) / words.length;
+        // The opacity transform remains the same, but scrollYProgress moves slower now
         const opacity = useTransform(scrollYProgress, [start, end], [0.1, 1]);
         
         return (
@@ -80,7 +83,7 @@ export default function About() {
     <div style={{ 
       position: 'relative', width: '100%', minHeight: '100vh', 
       backgroundColor: '#000', display: 'flex', flexDirection: 'column', 
-      alignItems: 'center', paddingTop: '32px', paddingBottom: '80px', // Adjusted for global footer flow
+      alignItems: 'center', paddingTop: '32px', paddingBottom: '80px', 
       overflowX: 'hidden', color: '#fff'
     }}>
       
@@ -153,7 +156,6 @@ export default function About() {
         </motion.div>
       </div>
 
-      {/* LOCAL FOOTER BAR REMOVED - Handled by global Layout */}
     </div>
   );
 }
